@@ -1,0 +1,40 @@
+I have an existing Next.js 15 + TypeScript + Tailwind CSS RepOrder dashboard application with the following structure:
+
+**EXISTING CODEBASE:**
+- Two dashboard interfaces: Company (/dashboard/company) and Rep (/dashboard/rep)
+- React Query for data fetching
+- Mock API endpoints at /api/dashboard/store-owner/me and /api/dashboard/rep/me
+- Supabase integration setup in src/lib/supabaseAdmin.ts
+- Database types in src/lib/database.types.ts
+- Existing database schema for stores, products, permissions
+
+**V0 DESIGN TO INTEGRATE:**
+[UPLOADED FILES]
+
+**INTEGRATION REQUIREMENTS:**
+Please update my existing codebase to match this v0 design by:
+
+1. **UI Components**: Replace existing components to match v0 styling exactly
+2. **Database Integration**: If the v0 design shows new data fields (SKUs, product details, etc.), please:
+   - Update Supabase schema/migrations as needed
+   - Create proper database queries in API routes
+   - Replace mock data with real Supabase queries
+   - Update TypeScript types to match database schema
+3. **API Evolution**: Convert mock endpoints to real Supabase-backed APIs when new data is needed
+4. **Data Flow**: Ensure React Query works with real database queries
+5. **Type Safety**: Update all TypeScript interfaces for database and component props
+
+**SPECIFIC GUIDANCE:**
+- If you see product SKUs, inventory levels, or detailed product data in v0 → assume this needs Supabase product tables
+- If you see user permissions or role management → update the existing permission system
+- If you see new data relationships → create appropriate foreign keys and joins
+- Replace mock data progressively (keep mocks for features not yet in database)
+
+**DATABASE ASSUMPTIONS:**
+When v0 shows data that would logically come from a database:
+- Create/update Supabase tables as needed
+- Write proper SQL queries with joins
+- Implement proper error handling and loading states
+- Follow existing database patterns in the codebase
+
+Please provide both UI updates AND database integration code.
