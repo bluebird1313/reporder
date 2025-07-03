@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { stores } from '@/app/dashboard/page'; // Using mock data from dashboard page for now
+import { Store } from "@/lib/types";
 
 type Props = {
   params: { storeId: string };
@@ -11,7 +12,7 @@ export default function StoreDetailsPage({ params }: Props) {
   
   // Find the specific store using the ID from the URL
   // Note: This is not efficient for a real application but works for the mock data.
-  const store = stores.find((s: any) => s.id.toString() === params.storeId);
+  const store = stores.find((s: Store) => s.id.toString() === params.storeId);
 
   if (!store) {
     return (
