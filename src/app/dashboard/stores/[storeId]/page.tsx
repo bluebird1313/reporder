@@ -5,6 +5,7 @@ import { Store } from "@/lib/types";
 
 type Props = {
   params: { storeId: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 };
 
 // This is how Next.js gets URL parameters for a page
