@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceRoleClient } from '@/lib/supabaseClient'
+import { createClient } from '@/lib/supabase/server'
 import { 
   inventoryResponseSchema, 
   updateStoreProductSchema, 
@@ -9,7 +9,7 @@ import {
 // GET /api/dashboard/inventory - Get inventory with joined store/product data
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServiceRoleClient()
+    const supabase = await createClient()
     
     // Get search parameters
     const { searchParams } = new URL(request.url)
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = updateStoreProductSchema.parse(body)
     
-    const supabase = createServiceRoleClient()
+    const supabase = await createClient()
 
     // Upsert the store_products record
     const { data, error } = await supabase

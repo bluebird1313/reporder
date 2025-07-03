@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Package } from "lucide-react"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/browser"
 import { toast } from "sonner"
 
 export function SignInForm() {
@@ -28,6 +28,7 @@ export function SignInForm() {
     setError("")
 
     try {
+      const supabase = createClient()
       const { error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
