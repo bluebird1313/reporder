@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { stores } from '@/app/dashboard/page'; // Using mock data from dashboard page for now
+import { stores } from '@/lib/data';
 import { Store } from "@/lib/types";
 
 type Props = {
