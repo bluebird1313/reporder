@@ -1,25 +1,62 @@
+"use client"
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { stores } from '@/lib/data';
-import { Store } from "@/lib/types";
+import { fetchStoreById, DashboardStore } from '@/lib/services/dashboard';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 type Props = {
-  params: { storeId: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ storeId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 // This is how Next.js gets URL parameters for a page
 export default function StoreDetailsPage({ params }: Props) {
-  
-  // Find the specific store using the ID from the URL
-  // Note: This is not efficient for a real application but works for the mock data.
-  const store = stores.find((s: Store) => s.id.toString() === params.storeId);
+  const [storeId, setStoreId] = useState<string | null>(null);
+  const [store, setStore] = useState<DashboardStore | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setStoreId(resolvedParams.storeId);
+    };
+    getParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (!storeId) return;
+
+    const loadStore = async () => {
+      try {
+        setLoading(true);
+        const storeData = await fetchStoreById(storeId);
+        setStore(storeData);
+      } catch (error) {
+        console.error('Error loading store:', error);
+        toast.error('Failed to load store details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStore();
+  }, [storeId]);
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <h1 className="text-3xl font-bold mb-6">Loading...</h1>
+      </div>
+    );
+  }
 
   if (!store) {
     return (
       <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">Store Not Found</h1>
-        <p>Sorry, we couldn't find a store with that ID.</p>
+        <p>Sorry, we couldn&apos;t find a store with that ID.</p>
       </div>
     );
   }

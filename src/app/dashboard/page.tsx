@@ -58,52 +58,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { stores } from "@/lib/data"
+import { 
+  fetchDashboardStores, 
+  fetchLowStockAlerts, 
+  fetchInventoryItems,
+  DashboardStore,
+  LowStockAlert as LowStockAlertType,
+  InventoryItem
+} from '@/lib/services/dashboard'
 
-// Mock data for stores and inventory has been moved to /lib/data.ts
+// Import removed - will use database data instead
 
-const lowStockAlerts = [
-  {
-    id: 1,
-    store: "TYLER'S",
-    item: "Sendero Logo Baseball Cap",
-    currentStock: 3,
-    minStock: 20,
-    severity: "high",
-  },
-  {
-    id: 2,
-    store: "Racquet & Jog",
-    item: "Sendero Performance T-Shirt",
-    currentStock: 8,
-    minStock: 15,
-    severity: "medium",
-  },
-  {
-    id: 3,
-    store: "Sun & Ski Sports",
-    item: "Sendero Hoodie - Navy",
-    currentStock: 5,
-    minStock: 12,
-    severity: "high",
-  },
-  {
-    id: 4,
-    store: "Cavender's",
-    item: "Sendero Trucker Hat",
-    currentStock: 7,
-    minStock: 18,
-    severity: "medium",
-  },
-  {
-    id: 5,
-    store: "SCHEELS (The Colony)",
-    item: "Sendero Long Sleeve Tee",
-    currentStock: 4,
-    minStock: 15,
-    severity: "high",
-  },
-]
+// Low stock alerts are now loaded from database via state
 
 // Mock inventory data
 const inventoryItems = [
@@ -583,7 +549,36 @@ function AppSidebar({ currentView, onNavigate }: { currentView: string; onNaviga
 export default function InventoryDashboard() {
   const [currentView, setCurrentView] = React.useState("overview")
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [stores, setStores] = React.useState<DashboardStore[]>([])
+  const [lowStockAlerts, setLowStockAlerts] = React.useState<LowStockAlertType[]>([])
+  const [inventoryItems, setInventoryItems] = React.useState<InventoryItem[]>([])
+  const [loading, setLoading] = React.useState(true)
   const router = useRouter()
+
+  // Load data on component mount
+  React.useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        const [storesData, alertsData, inventoryData] = await Promise.all([
+          fetchDashboardStores(),
+          fetchLowStockAlerts(),
+          fetchInventoryItems()
+        ])
+        
+        setStores(storesData)
+        setLowStockAlerts(alertsData)
+        setInventoryItems(inventoryData)
+      } catch (error) {
+        console.error('Error loading dashboard data:', error)
+        toast.error('Failed to load dashboard data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
 
   const handleNavigation = (view: string) => {
     setCurrentView(view)
@@ -600,7 +595,7 @@ export default function InventoryDashboard() {
         toast.success('Signed out successfully!')
         router.push('/sign-in')
       }
-    } catch (error) {
+    } catch {
       toast.error('An unexpected error occurred')
     }
   }
@@ -613,9 +608,9 @@ export default function InventoryDashboard() {
 
   const filteredInventory = inventoryItems.filter(
     (item) =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase()),
+      item.store_name.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   const totalItems = stores.reduce((sum, store) => sum + store.totalItems, 0)
@@ -662,10 +657,16 @@ export default function InventoryDashboard() {
 
         {/* Main Content */}
         <div className="flex flex-1 flex-col gap-4 p-4">
-          {/* Top Sellers Section - Always visible at the top */}
-          <TopSellersSection />
+          {loading ? (
+            <div className="flex items-center justify-center h-96">
+              <div className="text-lg">Loading dashboard data...</div>
+            </div>
+          ) : (
+            <>
+              {/* Top Sellers Section - Always visible at the top */}
+              <TopSellersSection />
 
-          {currentView === "overview" && (
+              {currentView === "overview" && (
             <>
               {/* Overview Cards */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -988,30 +989,32 @@ export default function InventoryDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
+                        <TableHead>Store</TableHead>
                         <TableHead>SKU</TableHead>
                         <TableHead>Product Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Total Stock</TableHead>
-                        <TableHead>Price</TableHead>
+                        <TableHead>Brand</TableHead>
+                        <TableHead>Current Stock</TableHead>
+                        <TableHead>Min Stock</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredInventory.map((item) => (
-                        <TableRow key={item.id} className="hover:bg-muted/30">
+                      {filteredInventory.map((item, index) => (
+                        <TableRow key={`${item.store_id}-${item.product_id}-${index}`} className="hover:bg-muted/30">
+                          <TableCell className="font-medium">{item.store_name}</TableCell>
                           <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-                          <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell>{item.category}</TableCell>
-                          <TableCell>{item.totalStock}</TableCell>
-                          <TableCell>${item.price}</TableCell>
+                          <TableCell className="font-medium">{item.product_name}</TableCell>
+                          <TableCell>{item.brand || 'N/A'}</TableCell>
+                          <TableCell>{item.qty}</TableCell>
+                          <TableCell>{item.min_qty}</TableCell>
                           <TableCell>
                             <Badge
                               variant={
-                                item.totalStock > 100 ? "default" : item.totalStock > 50 ? "secondary" : "destructive"
+                                item.qty > item.min_qty ? "default" : item.qty > 0 ? "secondary" : "destructive"
                               }
                             >
-                              {item.totalStock > 100 ? "In Stock" : item.totalStock > 50 ? "Low Stock" : "Critical"}
+                              {item.qty > item.min_qty ? "In Stock" : item.qty > 0 ? "Low Stock" : "Out of Stock"}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -1031,6 +1034,8 @@ export default function InventoryDashboard() {
                 </div>
               </CardContent>
             </Card>
+          )}
+            </>
           )}
         </div>
       </SidebarInset>
