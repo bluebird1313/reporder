@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+
 import {
   AlertTriangle,
   Building2,
@@ -28,7 +29,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
 import {
   Sidebar,
   SidebarContent,
@@ -211,51 +211,49 @@ const inventoryItems = [
   { id: 8, sku: "SND-BEA-001", name: "Sendero Beanie", category: "Headwear", totalStock: 167, price: 16.99 },
 ]
 
-// Mock reports data - TODO: Connect to real API
-// const reportsData = [
-//   { id: 1, name: "Monthly Inventory Report", type: "Inventory", date: "2024-01-15", status: "Completed" },
-//   { id: 2, name: "Low Stock Analysis", type: "Analysis", date: "2024-01-14", status: "Completed" },
-//   { id: 3, name: "Sales Performance Report", type: "Sales", date: "2024-01-13", status: "In Progress" },
-//   { id: 4, name: "Store Comparison Report", type: "Comparison", date: "2024-01-12", status: "Completed" },
-// ]
+const channels = ["western", "alt sports", "fashion", "outdoors", "resort"]
+const categories = ["hats", "T's", "wovens", "knits", "pants", "fleece"]
 
-// Mock users data - TODO: Connect to real API
-// const usersData = [
-//   {
-//     id: 1,
-//     name: "John Smith",
-//     email: "john.smith@sendero.com",
-//     role: "Admin",
-//     status: "Active",
-//     lastLogin: "2024-01-15",
-//   },
-//   {
-//     id: 2,
-//     name: "Sarah Johnson",
-//     email: "sarah.johnson@sendero.com",
-//     role: "Manager",
-//     status: "Active",
-//     lastLogin: "2024-01-15",
-//   },
-//   {
-//     id: 3,
-//     name: "Mike Davis",
-//     email: "mike.davis@sendero.com",
-//     role: "Buyer",
-//     status: "Active",
-//     lastLogin: "2024-01-14",
-//   },
-//   {
-//     id: 4,
-//     name: "Lisa Wilson",
-//     email: "lisa.wilson@sendero.com",
-//     role: "Analyst",
-//     status: "Inactive",
-//     lastLogin: "2024-01-10",
-//   },
-// ]
+const navigationItems = [
+  {
+    title: "Overview",
+    icon: Home,
+    view: "overview",
+    isActive: false,
+  },
+  {
+    title: "Stores",
+    icon: Building2,
+    view: "stores",
+    isActive: false,
+  },
+  {
+    title: "Inventory",
+    icon: Package,
+    view: "inventory",
+    isActive: false,
+  },
+  {
+    title: "Reports",
+    icon: TrendingUp,
+    view: "reports",
+    isActive: false,
+  },
+  {
+    title: "Users",
+    icon: Users,
+    view: "users",
+    isActive: false,
+  },
+  {
+    title: "Settings",
+    icon: Settings,
+    view: "settings",
+    isActive: false,
+  },
+]
 
-// Top sellers data by channel and category
+// Top sellers data by channel and category (simplified structure)
 const topSellersData = {
   western: {
     hats: [
@@ -479,48 +477,6 @@ const topSellersData = {
   },
 }
 
-const channels = ["western", "alt sports", "fashion", "outdoors", "resort"]
-const categories = ["hats", "T's", "wovens", "knits", "pants", "fleece"]
-
-const navigationItems = [
-  {
-    title: "Overview",
-    icon: Home,
-    view: "overview",
-    isActive: false,
-  },
-  {
-    title: "Stores",
-    icon: Building2,
-    view: "stores",
-    isActive: false,
-  },
-  {
-    title: "Inventory",
-    icon: Package,
-    view: "inventory",
-    isActive: false,
-  },
-  {
-    title: "Reports",
-    icon: TrendingUp,
-    view: "reports",
-    isActive: false,
-  },
-  {
-    title: "Users",
-    icon: Users,
-    view: "users",
-    isActive: false,
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    view: "settings",
-    isActive: false,
-  },
-]
-
 function TopSellersSection() {
   const [expandedChannel, setExpandedChannel] = React.useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null)
@@ -540,7 +496,7 @@ function TopSellersSection() {
   }
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-6 shadow-none bg-muted/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Star className="h-5 w-5 text-yellow-500" />
@@ -554,7 +510,7 @@ function TopSellersSection() {
             {channels.map((channel) => (
               <Button
                 key={channel}
-                variant={expandedChannel === channel ? "default" : "outline"}
+                variant={expandedChannel === channel ? "default" : "ghost"}
                 size="sm"
                 onClick={() => handleChannelClick(channel)}
                 className="capitalize flex items-center gap-2"
@@ -569,16 +525,15 @@ function TopSellersSection() {
               </Button>
             ))}
           </div>
-
           {expandedChannel && (
-            <div className="border rounded-lg">
-              <div className="border-t bg-muted/20">
+            <div className="rounded-lg bg-muted/10">
+              <div className="bg-muted/20">
                 <div className="p-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
                     {categories.map((category) => (
                       <Button
                         key={category}
-                        variant={selectedCategory === category ? "default" : "outline"}
+                        variant={selectedCategory === category ? "default" : "ghost"}
                         size="sm"
                         onClick={() => handleCategoryClick(category)}
                         className="capitalize"
@@ -587,64 +542,67 @@ function TopSellersSection() {
                       </Button>
                     ))}
                   </div>
-
                   {selectedCategory && (
                     <div className="mt-4">
                       <h4 className="font-semibold mb-3 capitalize">
                         Top {selectedCategory} - {expandedChannel}
                       </h4>
                       <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-12">Rank</TableHead>
-                              <TableHead>Style</TableHead>
-                              <TableHead>Color</TableHead>
-                              <TableHead>SKU</TableHead>
-                              <TableHead className="text-right">Units Sold</TableHead>
-                              <TableHead className="text-right">Revenue</TableHead>
-                              <TableHead className="text-right">Trend</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {topSellersData[expandedChannel as keyof typeof topSellersData][
-                              selectedCategory as keyof (typeof topSellersData)[keyof typeof topSellersData]
-                            ].map((item) => (
-                              <TableRow key={item.sku}>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <Badge
-                                      variant={item.rank === 1 ? "default" : item.rank <= 3 ? "secondary" : "outline"}
-                                      className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs"
-                                    >
-                                      {item.rank}
-                                    </Badge>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="font-medium">{item.style}</TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded-full border border-muted-foreground/20 bg-gradient-to-r from-slate-200 to-slate-300" />
-                                    {item.color}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-                                <TableCell className="text-right font-medium">{item.units.toLocaleString()}</TableCell>
-                                <TableCell className="text-right font-medium text-green-600">
-                                  ${item.revenue.toLocaleString()}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex items-center justify-end gap-1">
-                                    <TrendingUpIcon className="h-4 w-4 text-green-500" />
-                                    <span className="text-sm text-green-600">
-                                      +{Math.floor(Math.random() * 15) + 5}%
-                                    </span>
-                                  </div>
-                                </TableCell>
+                        <div className="bg-background/50 rounded-lg p-4">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="hover:bg-transparent">
+                                <TableHead className="w-12">Rank</TableHead>
+                                <TableHead>Style</TableHead>
+                                <TableHead>Color</TableHead>
+                                <TableHead>SKU</TableHead>
+                                <TableHead className="text-right">Units Sold</TableHead>
+                                <TableHead className="text-right">Revenue</TableHead>
+                                <TableHead className="text-right">Trend</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {topSellersData[expandedChannel as keyof typeof topSellersData][
+                                selectedCategory as keyof (typeof topSellersData)[keyof typeof topSellersData]
+                              ].map((item) => (
+                                <TableRow key={item.sku} className="hover:bg-muted/30">
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <Badge
+                                        variant={item.rank === 1 ? "default" : item.rank <= 3 ? "secondary" : "outline"}
+                                        className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs"
+                                      >
+                                        {item.rank}
+                                      </Badge>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="font-medium">{item.style}</TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-slate-200 to-slate-300" />
+                                      {item.color}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="font-mono text-sm">{item.sku}</TableCell>
+                                  <TableCell className="text-right font-medium">
+                                    {item.units.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell className="text-right font-medium text-green-600">
+                                    ${item.revenue.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      <TrendingUpIcon className="h-4 w-4 text-green-500" />
+                                      <span className="text-sm text-green-600">
+                                        +{Math.floor(Math.random() * 15) + 5}%
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -740,15 +698,14 @@ export default function InventoryDashboard() {
       <AppSidebar currentView={currentView} onNavigate={handleNavigation} />
       <SidebarInset>
         {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex flex-1 items-center gap-4">
             <h1 className="font-semibold">Sendero Inventory Dashboard</h1>
             <div className="ml-auto flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 w-8 rounded-full p-0 bg-transparent">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0">
                     <span className="text-xs font-medium">HG</span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -783,7 +740,7 @@ export default function InventoryDashboard() {
             <>
               {/* Overview Cards */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
+                <Card className="shadow-none bg-muted/20">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Items</CardTitle>
                     <Package className="h-4 w-4 text-muted-foreground" />
@@ -795,7 +752,8 @@ export default function InventoryDashboard() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+
+                <Card className="shadow-none bg-muted/20">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
                     <AlertTriangle className="h-4 w-4 text-yellow-500" />
@@ -805,7 +763,8 @@ export default function InventoryDashboard() {
                     <p className="text-xs text-muted-foreground">Requires attention</p>
                   </CardContent>
                 </Card>
-                <Card>
+
+                <Card className="shadow-none bg-muted/20">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
                     <TrendingDown className="h-4 w-4 text-red-500" />
@@ -815,7 +774,8 @@ export default function InventoryDashboard() {
                     <p className="text-xs text-muted-foreground">Immediate action needed</p>
                   </CardContent>
                 </Card>
-                <Card>
+
+                <Card className="shadow-none bg-muted/20">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Stores</CardTitle>
                     <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -830,7 +790,7 @@ export default function InventoryDashboard() {
               <div className="grid gap-4 lg:grid-cols-3">
                 {/* Store Inventory List */}
                 <div className="lg:col-span-2">
-                  <Card>
+                  <Card className="shadow-none bg-muted/20">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
@@ -844,63 +804,65 @@ export default function InventoryDashboard() {
                               placeholder="Search stores..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="pl-8 w-64"
+                              className="pl-8 w-64 bg-background/50"
                             />
                           </div>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Store</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead>Total Items</TableHead>
-                            <TableHead>Health</TableHead>
-                            <TableHead>Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredStores.map((store) => (
-                            <TableRow key={store.id}>
-                              <TableCell className="font-medium">{store.name}</TableCell>
-                              <TableCell className="text-muted-foreground">{store.location}</TableCell>
-                              <TableCell>{store.totalItems.toLocaleString()}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Progress value={store.inventoryHealth} className="w-16" />
-                                  <span className="text-sm">{store.inventoryHealth}%</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    store.inventoryHealth >= 90
-                                      ? "default"
-                                      : store.inventoryHealth >= 75
-                                        ? "secondary"
-                                        : "destructive"
-                                  }
-                                >
-                                  {store.inventoryHealth >= 90
-                                    ? "Excellent"
-                                    : store.inventoryHealth >= 75
-                                      ? "Good"
-                                      : "Needs Attention"}
-                                </Badge>
-                              </TableCell>
+                      <div className="bg-background/50 rounded-lg p-4">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                              <TableHead>Store</TableHead>
+                              <TableHead>Location</TableHead>
+                              <TableHead>Total Items</TableHead>
+                              <TableHead>Health</TableHead>
+                              <TableHead>Status</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredStores.map((store) => (
+                              <TableRow key={store.id} className="hover:bg-muted/30">
+                                <TableCell className="font-medium">{store.name}</TableCell>
+                                <TableCell className="text-muted-foreground">{store.location}</TableCell>
+                                <TableCell>{store.totalItems.toLocaleString()}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Progress value={store.inventoryHealth} className="w-16" />
+                                    <span className="text-sm">{store.inventoryHealth}%</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={
+                                      store.inventoryHealth >= 90
+                                        ? "default"
+                                        : store.inventoryHealth >= 75
+                                          ? "secondary"
+                                          : "destructive"
+                                    }
+                                  >
+                                    {store.inventoryHealth >= 90
+                                      ? "Excellent"
+                                      : store.inventoryHealth >= 75
+                                        ? "Good"
+                                        : "Needs Attention"}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Notification Panel */}
                 <div>
-                  <Card>
+                  <Card className="shadow-none bg-muted/20">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-yellow-500" />
@@ -912,7 +874,7 @@ export default function InventoryDashboard() {
                       {lowStockAlerts.map((alert) => (
                         <Alert
                           key={alert.id}
-                          className={alert.severity === "high" ? "border-red-200" : "border-yellow-200"}
+                          className={`${alert.severity === "high" ? "bg-red-50/50" : "bg-yellow-50/50"} shadow-none`}
                         >
                           <div className="flex items-start justify-between w-full">
                             <div className="flex items-start gap-2">
@@ -930,9 +892,9 @@ export default function InventoryDashboard() {
                               </div>
                             </div>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              className="ml-2 h-8 px-3 text-xs bg-transparent"
+                              className="ml-2 h-8 px-3 text-xs"
                               onClick={() => {
                                 console.log(`Notifying buyer for ${alert.item} at ${alert.store}`)
                               }}
@@ -942,27 +904,27 @@ export default function InventoryDashboard() {
                           </div>
                         </Alert>
                       ))}
-                      <Button variant="outline" className="w-full bg-transparent" size="sm">
+                      <Button variant="ghost" className="w-full" size="sm">
                         View All Alerts
                       </Button>
                     </CardContent>
                   </Card>
 
                   {/* Quick Actions */}
-                  <Card className="mt-4">
+                  <Card className="mt-4 shadow-none bg-muted/20">
                     <CardHeader>
                       <CardTitle>Quick Actions</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
+                      <Button variant="ghost" className="w-full justify-start" size="sm">
                         <Package className="mr-2 h-4 w-4" />
                         Add New Item
                       </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
+                      <Button variant="ghost" className="w-full justify-start" size="sm">
                         <Building2 className="mr-2 h-4 w-4" />
                         Manage Stores
                       </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent" size="sm">
+                      <Button variant="ghost" className="w-full justify-start" size="sm">
                         <TrendingUp className="mr-2 h-4 w-4" />
                         Generate Report
                       </Button>
@@ -974,7 +936,7 @@ export default function InventoryDashboard() {
           )}
 
           {currentView === "stores" && (
-            <Card>
+            <Card className="shadow-none bg-muted/20">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -988,7 +950,7 @@ export default function InventoryDashboard() {
                         placeholder="Search stores..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 w-64"
+                        className="pl-8 w-64 bg-background/50"
                       />
                     </div>
                     <Button size="sm">
@@ -999,70 +961,72 @@ export default function InventoryDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Store</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Total Items</TableHead>
-                      <TableHead>Low Stock</TableHead>
-                      <TableHead>Out of Stock</TableHead>
-                      <TableHead>Health</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStores.map((store) => (
-                      <TableRow key={store.id}>
-                        <TableCell className="font-medium">{store.name}</TableCell>
-                        <TableCell className="text-muted-foreground">{store.location}</TableCell>
-                        <TableCell>{store.totalItems.toLocaleString()}</TableCell>
-                        <TableCell className="text-yellow-600">{store.lowStockItems}</TableCell>
-                        <TableCell className="text-red-600">{store.outOfStock}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Progress value={store.inventoryHealth} className="w-16" />
-                            <span className="text-sm">{store.inventoryHealth}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              store.inventoryHealth >= 90
-                                ? "default"
-                                : store.inventoryHealth >= 75
-                                  ? "secondary"
-                                  : "destructive"
-                            }
-                          >
-                            {store.inventoryHealth >= 90
-                              ? "Excellent"
-                              : store.inventoryHealth >= 75
-                                ? "Good"
-                                : "Needs Attention"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="bg-background/50 rounded-lg p-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>Store</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Total Items</TableHead>
+                        <TableHead>Low Stock</TableHead>
+                        <TableHead>Out of Stock</TableHead>
+                        <TableHead>Health</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredStores.map((store) => (
+                        <TableRow key={store.id} className="hover:bg-muted/30">
+                          <TableCell className="font-medium">{store.name}</TableCell>
+                          <TableCell className="text-muted-foreground">{store.location}</TableCell>
+                          <TableCell>{store.totalItems.toLocaleString()}</TableCell>
+                          <TableCell className="text-yellow-600">{store.lowStockItems}</TableCell>
+                          <TableCell className="text-red-600">{store.outOfStock}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Progress value={store.inventoryHealth} className="w-16" />
+                              <span className="text-sm">{store.inventoryHealth}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                store.inventoryHealth >= 90
+                                  ? "default"
+                                  : store.inventoryHealth >= 75
+                                    ? "secondary"
+                                    : "destructive"
+                              }
+                            >
+                              {store.inventoryHealth >= 90
+                                ? "Excellent"
+                                : store.inventoryHealth >= 75
+                                  ? "Good"
+                                  : "Needs Attention"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           )}
 
           {currentView === "inventory" && (
-            <Card>
+            <Card className="shadow-none bg-muted/20">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -1076,7 +1040,7 @@ export default function InventoryDashboard() {
                         placeholder="Search inventory..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 w-64"
+                        className="pl-8 w-64 bg-background/50"
                       />
                     </div>
                     <Button size="sm">
@@ -1087,49 +1051,51 @@ export default function InventoryDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Product Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Total Stock</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInventory.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.category}</TableCell>
-                        <TableCell>{item.totalStock}</TableCell>
-                        <TableCell>${item.price}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              item.totalStock > 100 ? "default" : item.totalStock > 50 ? "secondary" : "destructive"
-                            }
-                          >
-                            {item.totalStock > 100 ? "In Stock" : item.totalStock > 50 ? "Low Stock" : "Critical"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="bg-background/50 rounded-lg p-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>SKU</TableHead>
+                        <TableHead>Product Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Total Stock</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInventory.map((item) => (
+                        <TableRow key={item.id} className="hover:bg-muted/30">
+                          <TableCell className="font-mono text-sm">{item.sku}</TableCell>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>{item.category}</TableCell>
+                          <TableCell>{item.totalStock}</TableCell>
+                          <TableCell>${item.price}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                item.totalStock > 100 ? "default" : item.totalStock > 50 ? "secondary" : "destructive"
+                              }
+                            >
+                              {item.totalStock > 100 ? "In Stock" : item.totalStock > 50 ? "Low Stock" : "Critical"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -1137,4 +1103,4 @@ export default function InventoryDashboard() {
       </SidebarInset>
     </SidebarProvider>
   )
-}
+} 
