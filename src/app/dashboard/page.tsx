@@ -2,6 +2,9 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/browser"
+import { toast } from "sonner"
 
 import {
   AlertTriangle,
@@ -578,8 +581,29 @@ function AppSidebar({ currentView, onNavigate }: { currentView: string; onNaviga
 }
 
 export default function InventoryDashboard() {
-  const [searchQuery, setSearchQuery] = React.useState("")
   const [currentView, setCurrentView] = React.useState("overview")
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const router = useRouter()
+
+  const handleNavigation = (view: string) => {
+    setCurrentView(view)
+  }
+
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        toast.error('Error signing out: ' + error.message)
+      } else {
+        toast.success('Signed out successfully!')
+        router.push('/sign-in')
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred')
+    }
+  }
 
   const filteredStores = stores.filter(
     (store) =>
@@ -597,11 +621,6 @@ export default function InventoryDashboard() {
   const totalItems = stores.reduce((sum, store) => sum + store.totalItems, 0)
   const totalLowStock = stores.reduce((sum, store) => sum + store.lowStockItems, 0)
   const totalOutOfStock = stores.reduce((sum, store) => sum + store.outOfStock, 0)
-
-  const handleNavigation = (view: string) => {
-    setCurrentView(view)
-    setSearchQuery("") // Reset search when changing views
-  }
 
   return (
     <SidebarProvider>
@@ -631,7 +650,7 @@ export default function InventoryDashboard() {
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign out
                   </DropdownMenuItem>
