@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -15,6 +16,9 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [role, setRole] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -36,11 +40,30 @@ export default function SignUpPage() {
       return
     }
 
+    if (!role) {
+      setError('Please select your role')
+      setLoading(false)
+      return
+    }
+
+    if (!fullName.trim()) {
+      setError('Please enter your full name')
+      setLoading(false)
+      return
+    }
+
     try {
       const supabase = createClient()
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+            role: role,
+            company_name: role === 'company' ? companyName : null
+          }
+        }
       })
 
       if (error) {
@@ -76,6 +99,18 @@ export default function SignUpPage() {
             )}
             
             <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -86,6 +121,33 @@ export default function SignUpPage() {
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">Account Type</Label>
+              <Select value={role} onValueChange={setRole} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your account type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="company">Store Owner / Company</SelectItem>
+                  <SelectItem value="rep">Sales Representative</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {role === 'company' && (
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Company Name</Label>
+                <Input
+                  id="companyName"
+                  type="text"
+                  placeholder="Enter your company/store name"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  required
+                />
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
