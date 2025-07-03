@@ -284,7 +284,7 @@ export function TopSellersSection() {
           </div>
 
           {expandedChannel && (
-            <div className="border rounded-lg">
+            <div className="rounded-lg">
               <div className="border-t bg-muted/20">
                 <div className="p-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
