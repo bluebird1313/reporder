@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 
 import {
   AlertTriangle,
@@ -56,7 +57,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 // Mock data for stores and inventory
-const stores = [
+export const stores = [
   {
     id: 1,
     name: "TYLER'S",
@@ -825,7 +826,11 @@ export default function InventoryDashboard() {
                           <TableBody>
                             {filteredStores.map((store) => (
                               <TableRow key={store.id} className="hover:bg-muted/30">
-                                <TableCell className="font-medium">{store.name}</TableCell>
+                                <TableCell>
+                                  <Link href={`/dashboard/stores/${store.id}`} className="font-medium text-blue-600 hover:underline">
+                                    {store.name}
+                                  </Link>
+                                </TableCell>
                                 <TableCell className="text-muted-foreground">{store.location}</TableCell>
                                 <TableCell>{store.totalItems.toLocaleString()}</TableCell>
                                 <TableCell>
