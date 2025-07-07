@@ -97,37 +97,37 @@ const navigationItems = [
   {
     title: "Overview",
     icon: Home,
-    view: "overview",
-    isActive: false,
+    href: "/dashboard",
+    isActive: true,
   },
   {
     title: "Stores",
     icon: Building2,
-    view: "stores",
+    href: "/dashboard/stores",
     isActive: false,
   },
   {
     title: "Inventory",
     icon: Package,
-    view: "inventory",
+    href: "/dashboard/inventory",
     isActive: false,
   },
   {
     title: "Reports",
     icon: TrendingUp,
-    view: "reports",
+    href: "/dashboard/reports",
     isActive: false,
   },
   {
     title: "Users",
     icon: Users,
-    view: "users",
+    href: "/dashboard/users",
     isActive: false,
   },
   {
     title: "Settings",
     icon: Settings,
-    view: "settings",
+    href: "/dashboard/settings",
     isActive: false,
   },
 ]
@@ -495,12 +495,7 @@ function TopSellersSection() {
   )
 }
 
-function AppSidebar({ currentView, onNavigate }: { currentView: string; onNavigate: (view: string) => void }) {
-  const updatedNavigationItems = navigationItems.map((item) => ({
-    ...item,
-    isActive: currentView === item.view,
-  }))
-
+function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
@@ -519,13 +514,13 @@ function AppSidebar({ currentView, onNavigate }: { currentView: string; onNaviga
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {updatedNavigationItems.map((item) => (
+              {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={item.isActive}>
-                    <button onClick={() => onNavigate(item.view)}>
+                    <a href={item.href}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
-                    </button>
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -619,7 +614,7 @@ export default function InventoryDashboard() {
 
   return (
     <SidebarProvider>
-      <AppSidebar currentView={currentView} onNavigate={handleNavigation} />
+      <AppSidebar />
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 px-4">

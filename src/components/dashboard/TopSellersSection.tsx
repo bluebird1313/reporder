@@ -1,13 +1,22 @@
 'use client'
 
-import React from 'react'
-import { Star, ChevronDown, ChevronRight, TrendingUpIcon } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import * as React from "react"
+import {
+  ChevronDown,
+  ChevronRight,
+  Star,
+  TrendingUpIcon,
+} from "lucide-react"
 
-// Top sellers data by channel and category
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+// Enhanced top sellers data from v0
+const channels = ["western", "alt sports", "fashion", "outdoors", "resort"]
+const categories = ["hats", "T's", "wovens", "knits", "pants", "fleece"]
+
 const topSellersData = {
   western: {
     hats: [
@@ -171,68 +180,65 @@ const topSellersData = {
       { rank: 5, style: "Summit Pullover", color: "Grey", sku: "SP-305-GRY", units: 1156, revenue: 69360 },
     ],
     pants: [
-      { rank: 1, style: "Trail Pants", color: "Khaki", sku: "TP-401-KHK", units: 2134, revenue: 170720 },
-      { rank: 2, style: "Hiking Shorts", color: "Olive", sku: "HS-402-OLV", units: 1876, revenue: 150080 },
-      { rank: 3, style: "Adventure Cargo", color: "Stone", sku: "AC-403-STN", units: 1654, revenue: 132320 },
-      { rank: 4, style: "Explorer Jeans", color: "Dark Wash", sku: "EJ-404-DWS", units: 1432, revenue: 114560 },
-      { rank: 5, style: "Summit Chino", color: "Navy", sku: "SC-405-NVY", units: 1298, revenue: 103840 },
+      { rank: 1, style: "Trail Pants", color: "Olive", sku: "TP-401-OLV", units: 1765, revenue: 141200 },
+      { rank: 2, style: "Hiking Cargo", color: "Khaki", sku: "HC-402-KHK", units: 1543, revenue: 123440 },
+      { rank: 3, style: "Adventure Shorts", color: "Stone", sku: "AS-403-STN", units: 1321, revenue: 105680 },
+      { rank: 4, style: "Explorer Chino", color: "Navy", sku: "EC-404-NVY", units: 1199, revenue: 95920 },
+      { rank: 5, style: "Summit Work", color: "Brown", sku: "SW-405-BRN", units: 1087, revenue: 86960 },
     ],
     fleece: [
-      { rank: 1, style: "Trail Jacket", color: "Forest", sku: "TJ-501-FOR", units: 1654, revenue: 115780 },
-      { rank: 2, style: "Hiking Vest", color: "Olive", sku: "HV-502-OLV", units: 1432, revenue: 100240 },
-      { rank: 3, style: "Adventure Fleece", color: "Stone", sku: "AF-503-STN", units: 1298, revenue: 90860 },
-      { rank: 4, style: "Explorer Zip", color: "Navy", sku: "EZ-504-NVY", units: 1156, revenue: 80920 },
-      { rank: 5, style: "Summit Sherpa", color: "Grey", sku: "SS-505-GRY", units: 1034, revenue: 72380 },
+      { rank: 1, style: "Trail Jacket", color: "Forest", sku: "TJ-501-FOR", units: 1432, revenue: 100240 },
+      { rank: 2, style: "Hiking Vest", color: "Olive", sku: "HV-502-OLV", units: 1298, revenue: 90860 },
+      { rank: 3, style: "Adventure Fleece", color: "Stone", sku: "AF-503-STN", units: 1156, revenue: 80920 },
+      { rank: 4, style: "Explorer Zip", color: "Navy", sku: "EZ-504-NVY", units: 1034, revenue: 72380 },
+      { rank: 5, style: "Summit Sherpa", color: "Grey", sku: "SS-505-GRY", units: 923, revenue: 64610 },
     ],
   },
   resort: {
     hats: [
-      { rank: 1, style: "Beach Cap", color: "White", sku: "BC-001-WHT", units: 2654, revenue: 53080 },
-      { rank: 2, style: "Resort Visor", color: "Pink", sku: "RV-002-PNK", units: 2432, revenue: 48640 },
-      { rank: 3, style: "Vacation Hat", color: "Coral", sku: "VH-003-COR", units: 2198, revenue: 43960 },
-      { rank: 4, style: "Tropical Bucket", color: "Turquoise", sku: "TB-004-TUR", units: 1987, revenue: 39740 },
-      { rank: 5, style: "Paradise Cap", color: "Yellow", sku: "PC-005-YEL", units: 1765, revenue: 35300 },
+      { rank: 1, style: "Resort Cap", color: "White", sku: "RC-001-WHT", units: 2345, revenue: 46900 },
+      { rank: 2, style: "Beach Hat", color: "Natural", sku: "BH-002-NAT", units: 2134, revenue: 42680 },
+      { rank: 3, style: "Pool Visor", color: "Navy", sku: "PV-003-NVY", units: 1987, revenue: 39740 },
+      { rank: 4, style: "Vacation Bucket", color: "Coral", sku: "VB-004-COR", units: 1765, revenue: 35300 },
+      { rank: 5, style: "Leisure Panama", color: "Cream", sku: "LP-005-CRM", units: 1543, revenue: 30860 },
     ],
     "T's": [
-      { rank: 1, style: "Beach Tee", color: "Ocean Blue", sku: "BT-101-OBL", units: 3987, revenue: 79740 },
-      { rank: 2, style: "Resort Shirt", color: "Coral", sku: "RS-102-COR", units: 3654, revenue: 73080 },
-      { rank: 3, style: "Vacation Tee", color: "Sunset", sku: "VT-103-SUN", units: 3432, revenue: 68640 },
-      { rank: 4, style: "Tropical Shirt", color: "Palm Green", sku: "TS-104-PGR", units: 3198, revenue: 63960 },
-      { rank: 5, style: "Paradise Tee", color: "White", sku: "PT-105-WHT", units: 2987, revenue: 59740 },
+      { rank: 1, style: "Resort Tee", color: "Tropical Blue", sku: "RT-101-TBL", units: 3456, revenue: 69120 },
+      { rank: 2, style: "Beach Basic", color: "Sunset Orange", sku: "BB-102-SOR", units: 3198, revenue: 63960 },
+      { rank: 3, style: "Pool Shirt", color: "Ocean Green", sku: "PS-103-OGR", units: 2987, revenue: 59740 },
+      { rank: 4, style: "Vacation Tee", color: "Palm Pink", sku: "VT-104-PPK", units: 2765, revenue: 55300 },
+      { rank: 5, style: "Leisure Polo", color: "Sky Blue", sku: "LP-105-SBL", units: 2543, revenue: 50860 },
     ],
     wovens: [
-      { rank: 1, style: "Beach Shirt", color: "Linen White", sku: "BS-201-LWH", units: 1876, revenue: 93800 },
-      { rank: 2, style: "Resort Button", color: "Sky Blue", sku: "RB-202-SBL", units: 1654, revenue: 82700 },
-      { rank: 3, style: "Vacation Blouse", color: "Coral", sku: "VB-203-COR", units: 1432, revenue: 71600 },
-      { rank: 4, style: "Tropical Shirt", color: "Palm Print", sku: "TS-204-PPR", units: 1298, revenue: 64900 },
-      { rank: 5, style: "Paradise Button", color: "Sunset", sku: "PB-205-SUN", units: 1156, revenue: 57800 },
+      { rank: 1, style: "Resort Shirt", color: "Tropical Print", sku: "RS-201-TPR", units: 1543, revenue: 123440 },
+      { rank: 2, style: "Beach Button", color: "Ocean Stripe", sku: "BB-202-OST", units: 1432, revenue: 114560 },
+      { rank: 3, style: "Pool Casual", color: "Palm Leaf", sku: "PC-203-PLF", units: 1321, revenue: 105680 },
+      { rank: 4, style: "Vacation Linen", color: "Sunset Coral", sku: "VL-204-SCO", units: 1234, revenue: 98720 },
+      { rank: 5, style: "Leisure Blend", color: "Island Blue", sku: "LB-205-IBL", units: 1156, revenue: 92480 },
     ],
     knits: [
-      { rank: 1, style: "Beach Hoodie", color: "Ocean", sku: "BH-301-OCN", units: 2134, revenue: 128040 },
-      { rank: 2, style: "Resort Cardigan", color: "Coral", sku: "RC-302-COR", units: 1876, revenue: 112560 },
-      { rank: 3, style: "Vacation Pullover", color: "Sunset", sku: "VP-303-SUN", units: 1654, revenue: 99240 },
-      { rank: 4, style: "Tropical Zip", color: "Palm", sku: "TZ-304-PAL", units: 1432, revenue: 85920 },
-      { rank: 5, style: "Paradise Crew", color: "White", sku: "PC-305-WHT", units: 1298, revenue: 77880 },
+      { rank: 1, style: "Resort Hoodie", color: "Ocean Mist", sku: "RH-301-OMI", units: 1765, revenue: 105900 },
+      { rank: 2, style: "Beach Crew", color: "Coral Reef", sku: "BC-302-CRF", units: 1654, revenue: 99240 },
+      { rank: 3, style: "Pool Zip", color: "Tropical Teal", sku: "PZ-303-TTL", units: 1543, revenue: 92580 },
+      { rank: 4, style: "Vacation Knit", color: "Sunset Pink", sku: "VK-304-SPK", units: 1432, revenue: 85920 },
+      { rank: 5, style: "Leisure Pullover", color: "Island Green", sku: "LP-305-IGR", units: 1321, revenue: 79260 },
     ],
     pants: [
-      { rank: 1, style: "Beach Shorts", color: "Coral", sku: "BS-401-COR", units: 3456, revenue: 207360 },
-      { rank: 2, style: "Resort Linen", color: "White", sku: "RL-402-WHT", units: 2987, revenue: 238960 },
-      { rank: 3, style: "Vacation Capri", color: "Ocean", sku: "VC-403-OCN", units: 2654, revenue: 159240 },
-      { rank: 4, style: "Tropical Swim", color: "Sunset", sku: "TS-404-SUN", units: 2432, revenue: 121600 },
-      { rank: 5, style: "Paradise Pants", color: "Palm", sku: "PP-405-PAL", units: 2198, revenue: 175840 },
+      { rank: 1, style: "Resort Linen", color: "Natural", sku: "RL-401-NAT", units: 1987, revenue: 198700 },
+      { rank: 2, style: "Beach Shorts", color: "Ocean Blue", sku: "BS-402-OBL", units: 1876, revenue: 150080 },
+      { rank: 3, style: "Pool Casual", color: "Coral Pink", sku: "PC-403-CPK", units: 1765, revenue: 141200 },
+      { rank: 4, style: "Vacation Chino", color: "Palm Green", sku: "VC-404-PGR", units: 1654, revenue: 132320 },
+      { rank: 5, style: "Leisure Flow", color: "Sunset Orange", sku: "LF-405-SOR", units: 1543, revenue: 123440 },
     ],
     fleece: [
-      { rank: 1, style: "Beach Jacket", color: "White", sku: "BJ-501-WHT", units: 1456, revenue: 101920 },
-      { rank: 2, style: "Resort Wrap", color: "Coral", sku: "RW-502-COR", units: 1234, revenue: 86380 },
-      { rank: 3, style: "Vacation Vest", color: "Ocean", sku: "VV-503-OCN", units: 1087, revenue: 76090 },
-      { rank: 4, style: "Tropical Zip", color: "Sunset", sku: "TZ-504-SUN", units: 923, revenue: 64610 },
-      { rank: 5, style: "Paradise Fleece", color: "Palm", sku: "PF-505-PAL", units: 812, revenue: 56840 },
+      { rank: 1, style: "Resort Wrap", color: "Ocean Breeze", sku: "RW-501-OBR", units: 1321, revenue: 92470 },
+      { rank: 2, style: "Beach Cover", color: "Coral Sunset", sku: "BC-502-CSU", units: 1234, revenue: 86380 },
+      { rank: 3, style: "Pool Cardigan", color: "Tropical Mint", sku: "PC-503-TMI", units: 1156, revenue: 80920 },
+      { rank: 4, style: "Vacation Layer", color: "Island Breeze", sku: "VL-504-IBR", units: 1087, revenue: 76090 },
+      { rank: 5, style: "Leisure Light", color: "Palm Whisper", sku: "LL-505-PWH", units: 1023, revenue: 71610 },
     ],
   },
 }
-
-const channels = ["western", "alt sports", "fashion", "outdoors", "resort"]
-const categories = ["hats", "T's", "wovens", "knits", "pants", "fleece"]
 
 export function TopSellersSection() {
   const [expandedChannel, setExpandedChannel] = React.useState<string | null>(null)
@@ -284,7 +290,7 @@ export function TopSellersSection() {
           </div>
 
           {expandedChannel && (
-            <div className="rounded-lg">
+            <div className="border rounded-lg">
               <div className="border-t bg-muted/20">
                 <div className="p-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
