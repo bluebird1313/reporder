@@ -18,6 +18,9 @@ import {
   TrendingUp,
   Users,
   Home,
+  AlertTriangle,
+  CheckCircle,
+  Filter,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -49,10 +52,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { 
-  fetchInventoryItems, 
-  InventoryItem
+import {
+  fetchSenderoProducts,
+  SenderoProduct,
 } from '@/lib/services/dashboard'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
 
 // Navigation items
 const navigationItems = [
@@ -122,36 +133,74 @@ function AppSidebar() {
   )
 }
 
+interface InventoryItem {
+  id: number
+  sku: string
+  name: string
+  category: string
+  totalStock: number
+  price: number
+  status: 'in-stock' | 'low-stock' | 'out-of-stock'
+  style_name?: string
+  launch_season?: string
+  base_color?: string | null
+  marketing_color?: string | null
+}
+
 export default function InventoryPage() {
-  const [inventoryItems, setInventoryItems] = useState<any[]>([])
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const router = useRouter()
+  const { toast } = useToast()
+
+  // Generate realistic stock levels and status
+  const getStockInfo = (index: number) => {
+    const stockLevel = Math.floor(Math.random() * 600) + 10
+    let status: 'in-stock' | 'low-stock' | 'out-of-stock' = 'in-stock'
+    
+    if (stockLevel < 50) status = 'low-stock'
+    if (stockLevel < 20) status = 'out-of-stock'
+    
+    return { stockLevel, status }
+  }
 
   useEffect(() => {
     const loadInventoryItems = async () => {
       try {
         setLoading(true)
-        // Use real Sendero products from database
-        const { fetchSenderoProducts } = await import('@/lib/services/dashboard')
+        // Fetch ALL Sendero products from Supabase
         const senderoProducts = await fetchSenderoProducts()
         
-        // Transform Sendero products into inventory display format
-        const inventoryData = senderoProducts.slice(0, 50).map((product, index) => ({
-          id: index + 1,
-          sku: product.style_number,
-          name: product.display_name,
-          category: product.product_type,
-          totalStock: Math.floor(Math.random() * 500) + 50, // Simulated stock levels
-          price: product.msrp / 100
-        }))
+        // Transform ALL Sendero products into inventory display format
+        const inventoryData: InventoryItem[] = senderoProducts.map((product, index) => {
+          const { stockLevel, status } = getStockInfo(index)
+          
+          return {
+            id: index + 1,
+            sku: product.style_number,
+            name: product.display_name,
+            category: product.product_type,
+            totalStock: stockLevel,
+            price: product.msrp / 100,
+            status,
+            style_name: product.style_name,
+            launch_season: product.launch_season,
+            base_color: product.base_color,
+            marketing_color: product.marketing_color
+          }
+        })
         
         setInventoryItems(inventoryData)
+        setFilteredItems(inventoryData)
+        
+        console.log(`Loaded ${inventoryData.length} Sendero products from database`)
       } catch (error) {
         console.error('Error loading inventory:', error)
-        toast.error('Failed to load inventory data')
-        // Fallback to mock data if database fails
-        setInventoryItems(mockInventoryItems)
+        console.error('Failed to load inventory data from Supabase')
       } finally {
         setLoading(false)
       }
@@ -159,6 +208,35 @@ export default function InventoryPage() {
 
     loadInventoryItems()
   }, [])
+
+  // Filter and search functionality
+  useEffect(() => {
+    let filtered = inventoryItems
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.style_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.marketing_color?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    // Category filter
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(item => 
+        item.category.toLowerCase() === categoryFilter.toLowerCase()
+      )
+    }
+
+    // Status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(item => item.status === statusFilter)
+    }
+
+    setFilteredItems(filtered)
+  }, [searchTerm, categoryFilter, statusFilter, inventoryItems])
 
   const handleSignOut = async () => {
     try {
@@ -176,12 +254,45 @@ export default function InventoryPage() {
     }
   }
 
-  const filteredInventory = inventoryItems.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'in-stock':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />In Stock</Badge>
+      case 'low-stock':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><AlertTriangle className="w-3 h-3 mr-1" />Low Stock</Badge>
+      case 'out-of-stock':
+        return <Badge variant="destructive"><Package className="w-3 h-3 mr-1" />Out of Stock</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
+  }
+
+  const getUniqueCategories = () => {
+    const categories = [...new Set(inventoryItems.map(item => item.category))]
+    return categories.sort()
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Inventory Management</h1>
+            <p className="text-muted-foreground mt-1">Loading Sendero merchandise inventory...</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <SidebarProvider>
@@ -239,9 +350,9 @@ export default function InventoryPage() {
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search inventory..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search inventory (name, SKU, style, color)..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-8 w-64"
                       />
                     </div>
@@ -253,49 +364,41 @@ export default function InventoryPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Product Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Total Stock</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInventory.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.category}</TableCell>
-                        <TableCell>{item.totalStock}</TableCell>
-                        <TableCell>${item.price}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              item.totalStock > 100 ? "default" : item.totalStock > 50 ? "secondary" : "destructive"
-                            }
-                          >
-                            {item.totalStock > 100 ? "In Stock" : item.totalStock > 50 ? "Low Stock" : "Critical"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Search inventory (name, SKU, style, color)..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {getUniqueCategories().map(category => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="in-stock">In Stock</SelectItem>
+                      <SelectItem value="low-stock">Low Stock</SelectItem>
+                      <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
           )}
