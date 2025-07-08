@@ -803,18 +803,18 @@ export default function InventoryDashboard() {
                       {lowStockAlerts.map((alert) => (
                         <Alert
                           key={alert.id}
-                          className={`${alert.severity === "high" ? "bg-red-50/50" : "bg-yellow-50/50"} shadow-none`}
+                          className={`${alert.current_stock <= 5 ? "bg-red-50/50" : "bg-yellow-50/50"} shadow-none`}
                         >
                           <div className="flex items-start justify-between w-full">
                             <div className="flex items-start gap-2">
                               <AlertTriangle className="h-4 w-4 mt-0.5" />
                               <div className="flex-1">
-                                <AlertTitle className="text-sm">{alert.item}</AlertTitle>
+                                <AlertTitle className="text-sm">{alert.product_name}</AlertTitle>
                                 <AlertDescription className="text-xs">
                                   <div className="mt-1">
-                                    <div className="font-medium">{alert.store}</div>
+                                    <div className="font-medium">{alert.store_name}</div>
                                     <div className="text-muted-foreground">
-                                      Current: {alert.currentStock} | Min: {alert.minStock}
+                                      Current: {alert.current_stock} | Min: {alert.minimum_stock}
                                     </div>
                                   </div>
                                 </AlertDescription>
@@ -825,7 +825,7 @@ export default function InventoryDashboard() {
                               size="sm"
                               className="ml-2 h-8 px-3 text-xs"
                               onClick={() => {
-                                console.log(`Notifying buyer for ${alert.item} at ${alert.store}`)
+                                console.log(`Notifying buyer for ${alert.product_name} at ${alert.store_name}`)
                               }}
                             >
                               Notify Buyer
