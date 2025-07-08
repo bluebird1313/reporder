@@ -132,15 +132,26 @@ export default function InventoryPage() {
     const loadInventoryItems = async () => {
       try {
         setLoading(true)
-        // TODO: Replace with real Supabase query when database schema supports product details
-        // const inventoryData = await fetchInventoryItems()
-        // setInventoryItems(inventoryData)
+        // Use real Sendero products from database
+        const { fetchSenderoProducts } = await import('@/lib/services/dashboard')
+        const senderoProducts = await fetchSenderoProducts()
         
-        // For now, use mock data
-        setInventoryItems(mockInventoryItems)
+        // Transform Sendero products into inventory display format
+        const inventoryData = senderoProducts.slice(0, 50).map((product, index) => ({
+          id: index + 1,
+          sku: product.style_number,
+          name: product.display_name,
+          category: product.product_type,
+          totalStock: Math.floor(Math.random() * 500) + 50, // Simulated stock levels
+          price: product.msrp / 100
+        }))
+        
+        setInventoryItems(inventoryData)
       } catch (error) {
         console.error('Error loading inventory:', error)
         toast.error('Failed to load inventory data')
+        // Fallback to mock data if database fails
+        setInventoryItems(mockInventoryItems)
       } finally {
         setLoading(false)
       }

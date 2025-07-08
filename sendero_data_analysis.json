@@ -1,0 +1,221 @@
+{
+  "file_info": {
+    "path": "C:\\Users\\tglas\\OneDrive\\Desktop\\reporder\\SP26 UPC List (2).xlsx",
+    "sheets": [
+      "SP26 UPC List"
+    ],
+    "total_rows": 1530,
+    "total_columns": 11
+  },
+  "columns": [
+    {
+      "name": "External ID",
+      "dtype": "object",
+      "non_null_count": 1530,
+      "null_percentage": 0.0,
+      "unique_values": "50+"
+    },
+    {
+      "name": "Launch Season",
+      "dtype": "object",
+      "non_null_count": 1530,
+      "null_percentage": 0.0,
+      "unique_values": 14
+    },
+    {
+      "name": "Display Name",
+      "dtype": "object",
+      "non_null_count": 1530,
+      "null_percentage": 0.0,
+      "unique_values": "50+"
+    },
+    {
+      "name": "Base Color",
+      "dtype": "object",
+      "non_null_count": 1510,
+      "null_percentage": 1.31,
+      "unique_values": 25
+    },
+    {
+      "name": "Marketing Color",
+      "dtype": "object",
+      "non_null_count": 1523,
+      "null_percentage": 0.46,
+      "unique_values": "50+"
+    },
+    {
+      "name": "Product Type",
+      "dtype": "object",
+      "non_null_count": 1530,
+      "null_percentage": 0.0,
+      "unique_values": 3
+    },
+    {
+      "name": "UPC Code",
+      "dtype": "int64",
+      "non_null_count": 1530,
+      "null_percentage": 0.0,
+      "unique_values": 1530
+    },
+    {
+      "name": "Style Name",
+      "dtype": "object",
+      "non_null_count": 1530,
+      "null_percentage": 0.0,
+      "unique_values": "50+"
+    },
+    {
+      "name": "MSRP",
+      "dtype": "int64",
+      "non_null_count": 1530,
+      "null_percentage": 0.0,
+      "unique_values": 31
+    },
+    {
+      "name": "WHLS",
+      "dtype": "float64",
+      "non_null_count": 1530,
+      "null_percentage": 0.0,
+      "unique_values": 31
+    },
+    {
+      "name": "Style Number",
+      "dtype": "object",
+      "non_null_count": 1530,
+      "null_percentage": 0.0,
+      "unique_values": "50+"
+    }
+  ],
+  "sample_data": [
+    {
+      "External ID": "SPCA120P36AXX",
+      "Launch Season": "Pre 2021",
+      "Display Name": "Shootin' Hand Sticker",
+      "Base Color": "White",
+      "Marketing Color": "White",
+      "Product Type": "Accessory",
+      "UPC Code": 840380331208,
+      "Style Name": "Shootin' Hand Sticker",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA120P36"
+    },
+    {
+      "External ID": "SPCA120P38AXX",
+      "Launch Season": "Pre 2021",
+      "Display Name": "Leroy Brown Sticker",
+      "Base Color": "White",
+      "Marketing Color": "White",
+      "Product Type": "Accessory",
+      "UPC Code": 840380309924,
+      "Style Name": "Leroy Brown Sticker",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA120P38"
+    },
+    {
+      "External ID": "SPCA120P65AXX",
+      "Launch Season": "Pre 2021",
+      "Display Name": "Vaquero Muerto Sticker",
+      "Base Color": "White",
+      "Marketing Color": "White",
+      "Product Type": "Accessory",
+      "UPC Code": 840380343973,
+      "Style Name": "Vaquero Muerto Sticker",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA120P65"
+    },
+    {
+      "External ID": "SPCA121F17AXX",
+      "Launch Season": "Fall 2021",
+      "Display Name": "Shootin' Hand Sticker - Salud Edition",
+      "Base Color": "Blue",
+      "Marketing Color": "Blue",
+      "Product Type": "Accessory",
+      "UPC Code": 840380331239,
+      "Style Name": "Shootin' Hand Sticker -  Salud Edition",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA121F17"
+    },
+    {
+      "External ID": "SPCA121F18AXX",
+      "Launch Season": "Fall 2021",
+      "Display Name": "All Hat No Cattle Sticker",
+      "Base Color": "White",
+      "Marketing Color": "White",
+      "Product Type": "Accessory",
+      "UPC Code": 840380331277,
+      "Style Name": "All Hat No Cattle Sticker",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA121F18"
+    },
+    {
+      "External ID": "SPCA121F21AXX",
+      "Launch Season": "Fall 2021",
+      "Display Name": "The Hank Sticker",
+      "Base Color": "Red",
+      "Marketing Color": "Red",
+      "Product Type": "Accessory",
+      "UPC Code": 840380331499,
+      "Style Name": "The Hank Sticker",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA121F21"
+    },
+    {
+      "External ID": "SPCA122F20AXX",
+      "Launch Season": "Fall 2022",
+      "Display Name": "Well Bye Sticker",
+      "Base Color": "Brown",
+      "Marketing Color": "Brown",
+      "Product Type": "Accessory",
+      "UPC Code": 840380330966,
+      "Style Name": "Well Bye Sticker",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA122F20"
+    },
+    {
+      "External ID": "SPCA122S20AXX",
+      "Launch Season": "Spring 2022",
+      "Display Name": "Tranquilo Sticker",
+      "Base Color": "Black",
+      "Marketing Color": "Black",
+      "Product Type": "Accessory",
+      "UPC Code": 840380370597,
+      "Style Name": "Tranquilo Sticker",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA122S20"
+    },
+    {
+      "External ID": "SPCA123F12AXX",
+      "Launch Season": "Fall 2023",
+      "Display Name": "Fast Horse Sticker",
+      "Base Color": "Beige",
+      "Marketing Color": "Beige",
+      "Product Type": "Accessory",
+      "UPC Code": 840380300013,
+      "Style Name": "Fast Horse Sticker",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA123F12"
+    },
+    {
+      "External ID": "SPCA123F13AXX",
+      "Launch Season": "Fall 2023",
+      "Display Name": "Ride or Die Sticker",
+      "Base Color": "Blue",
+      "Marketing Color": "Blue",
+      "Product Type": "Accessory",
+      "UPC Code": 840380300020,
+      "Style Name": "Ride or Die Sticker",
+      "MSRP": 4,
+      "WHLS": 2.0,
+      "Style Number": "SPCA123F13"
+    }
+  ]
+}

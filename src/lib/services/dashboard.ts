@@ -27,63 +27,90 @@ export interface InventoryItem {
 }
 
 export interface LowStockAlert {
+  id: string
+  product_name: string
+  store_name: string
+  current_stock: number
+  minimum_stock: number
+  sku: string
+}
+
+export interface SenderoProduct {
   id: string;
-  store: string;
-  item: string;
-  currentStock: number;
-  minStock: number;
-  severity: 'high' | 'medium' | 'low';
+  external_id: string;
+  upc_code: number;
+  style_number: string;
+  display_name: string;
+  style_name: string;
+  launch_season: string;
+  base_color: string | null;
+  marketing_color: string | null;
+  product_type: string;
+  msrp: number; // in cents
+  wholesale_price: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductSummary {
+  id: string;
+  external_id: string;
+  upc_code: number;
+  style_number: string;
+  display_name: string;
+  product_type: string;
+  base_color: string | null;
+  marketing_color: string | null;
+  launch_season: string;
+  msrp_dollars: number;
+  wholesale_price: number;
+  markup_amount: number;
+  markup_percentage: number;
 }
 
 export async function fetchDashboardStores(): Promise<DashboardStore[]> {
   const supabase = createClient()
   
   try {
-    // Get all stores with their inventory data
-    const { data: stores, error: storesError } = await supabase
+    const { data: stores, error } = await supabase
       .from('stores')
-      .select('*')
-      .order('name')
-
-    if (storesError) {
-      console.error('Error fetching stores:', storesError)
-      throw storesError
-    }
-
-    // Get inventory data for all stores
-    const { data: inventory, error: inventoryError } = await supabase
-      .from('store_products')
       .select(`
-        store_id,
-        qty,
-        min_qty,
-        stores!inner(name),
-        products!inner(name)
+        id,
+        name,
+        address,
+        store_products!inner(
+          quantity,
+          minimum_stock,
+          products!inner(
+            id,
+            sku,
+            brand
+          )
+        )
       `)
 
-    if (inventoryError) {
-      console.error('Error fetching inventory:', inventoryError)
-      throw inventoryError
+    if (error) {
+      console.error('Error fetching stores:', error)
+      throw error
     }
 
-    // Calculate metrics for each store
-    const dashboardStores: DashboardStore[] = stores.map(store => {
-      const storeInventory = inventory.filter(item => item.store_id === store.id)
+    if (!stores) return []
+
+    return stores.map(store => {
+      const totalItems = store.store_products.reduce((sum: number, sp: any) => sum + sp.quantity, 0)
+      const lowStockItems = store.store_products.filter((sp: any) => sp.quantity <= sp.minimum_stock).length
+      const outOfStock = store.store_products.filter((sp: any) => sp.quantity === 0).length
       
-      const totalItems = storeInventory.reduce((sum, item) => sum + item.qty, 0)
-      const lowStockItems = storeInventory.filter(item => item.qty <= item.min_qty && item.qty > 0).length
-      const outOfStock = storeInventory.filter(item => item.qty === 0).length
-      
-      // Calculate inventory health (percentage of items that are adequately stocked)
-      const adequateStock = storeInventory.filter(item => item.qty > item.min_qty).length
-      const inventoryHealth = storeInventory.length > 0 
-        ? Math.round((adequateStock / storeInventory.length) * 100)
+      // Calculate inventory health (percentage of items that are well-stocked)
+      const wellStockedItems = store.store_products.filter((sp: any) => sp.quantity > sp.minimum_stock).length
+      const inventoryHealth = store.store_products.length > 0 
+        ? Math.round((wellStockedItems / store.store_products.length) * 100)
         : 100
 
       return {
         id: store.id,
         name: store.name,
-        location: store.address || 'No address',
+        location: store.address,
         totalItems,
         lowStockItems,
         outOfStock,
@@ -91,7 +118,6 @@ export async function fetchDashboardStores(): Promise<DashboardStore[]> {
       }
     })
 
-    return dashboardStores
   } catch (error) {
     console.error('Error in fetchDashboardStores:', error)
     throw error
@@ -102,52 +128,51 @@ export async function fetchStoreById(storeId: string): Promise<DashboardStore | 
   const supabase = createClient()
   
   try {
-    // Get store info
-    const { data: store, error: storeError } = await supabase
+    const { data: store, error } = await supabase
       .from('stores')
-      .select('*')
+      .select(`
+        id,
+        name,
+        address,
+        store_products!inner(
+          quantity,
+          minimum_stock,
+          products!inner(
+            id,
+            sku,
+            brand
+          )
+        )
+      `)
       .eq('id', storeId)
       .single()
 
-    if (storeError || !store) {
-      console.error('Error fetching store:', storeError)
-      return null
+    if (error) {
+      console.error('Error fetching store:', error)
+      throw error
     }
 
-    // Get inventory data for this store
-    const { data: inventory, error: inventoryError } = await supabase
-      .from('store_products')
-      .select(`
-        qty,
-        min_qty,
-        products!inner(name)
-      `)
-      .eq('store_id', storeId)
+    if (!store) return null
 
-    if (inventoryError) {
-      console.error('Error fetching store inventory:', inventoryError)
-      throw inventoryError
-    }
-
-    // Calculate metrics
-    const totalItems = inventory.reduce((sum, item) => sum + item.qty, 0)
-    const lowStockItems = inventory.filter(item => item.qty <= item.min_qty && item.qty > 0).length
-    const outOfStock = inventory.filter(item => item.qty === 0).length
+    const totalItems = store.store_products.reduce((sum: number, sp: any) => sum + sp.quantity, 0)
+    const lowStockItems = store.store_products.filter((sp: any) => sp.quantity <= sp.minimum_stock).length
+    const outOfStock = store.store_products.filter((sp: any) => sp.quantity === 0).length
     
-    const adequateStock = inventory.filter(item => item.qty > item.min_qty).length
-    const inventoryHealth = inventory.length > 0 
-      ? Math.round((adequateStock / inventory.length) * 100)
+    const wellStockedItems = store.store_products.filter((sp: any) => sp.quantity > sp.minimum_stock).length
+    const inventoryHealth = store.store_products.length > 0 
+      ? Math.round((wellStockedItems / store.store_products.length) * 100)
       : 100
 
     return {
       id: store.id,
       name: store.name,
-      location: store.address || 'No address',
+      location: store.address,
       totalItems,
       lowStockItems,
       outOfStock,
       inventoryHealth
     }
+
   } catch (error) {
     console.error('Error in fetchStoreById:', error)
     throw error
@@ -158,44 +183,41 @@ export async function fetchLowStockAlerts(): Promise<LowStockAlert[]> {
   const supabase = createClient()
   
   try {
-    const { data, error } = await supabase
+    const { data: alerts, error } = await supabase
       .from('store_products')
       .select(`
-        store_id,
-        qty,
-        min_qty,
-        stores!inner(name),
-        products!inner(name)
+        id,
+        quantity,
+        minimum_stock,
+        products!inner(
+          id,
+          sku,
+          brand
+        ),
+        stores!inner(
+          id,
+          name
+        )
       `)
-      .lt('qty', 'min_qty')
-      .gt('qty', 0)
-      .order('qty', { ascending: true })
-      .limit(10)
+      .lte('quantity', supabase.rpc('minimum_stock'))
+      .order('quantity', { ascending: true })
 
     if (error) {
       console.error('Error fetching low stock alerts:', error)
       throw error
     }
 
-    const alerts: LowStockAlert[] = data.map((item, index) => {
-      const store = (item.stores as any)?.name || 'Unknown Store'
-      const product = (item.products as any)?.name || 'Unknown Product'
-      
-      // Determine severity based on how far below min stock
-      const stockRatio = item.qty / item.min_qty
-      const severity = stockRatio <= 0.3 ? 'high' : stockRatio <= 0.6 ? 'medium' : 'low'
+    if (!alerts) return []
 
-      return {
-        id: `${item.store_id}-${index}`,
-        store,
-        item: product,
-        currentStock: item.qty,
-        minStock: item.min_qty,
-        severity
-      }
-    })
+         return alerts.map(alert => ({
+       id: alert.id,
+       product_name: `${(alert.products as any).brand} - ${(alert.products as any).sku}`,
+       store_name: (alert.stores as any).name,
+       current_stock: alert.quantity,
+       minimum_stock: alert.minimum_stock,
+       sku: (alert.products as any).sku
+     }))
 
-    return alerts
   } catch (error) {
     console.error('Error in fetchLowStockAlerts:', error)
     throw error
@@ -267,6 +289,139 @@ export async function fetchInventoryItems(searchQuery?: string, storeId?: string
     return items
   } catch (error) {
     console.error('Error in fetchInventoryItems:', error)
+    throw error
+  }
+}
+
+export async function fetchSenderoProducts(): Promise<SenderoProduct[]> {
+  const supabase = createClient()
+  
+  try {
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('display_name', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching Sendero products:', error)
+      throw error
+    }
+
+    return products || []
+
+  } catch (error) {
+    console.error('Error in fetchSenderoProducts:', error)
+    throw error
+  }
+}
+
+export async function fetchProductSummary(): Promise<ProductSummary[]> {
+  const supabase = createClient()
+  
+  try {
+    const { data: products, error } = await supabase
+      .from('product_summary')
+      .select('*')
+      .order('display_name', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching product summary:', error)
+      throw error
+    }
+
+    return products || []
+
+  } catch (error) {
+    console.error('Error in fetchProductSummary:', error)
+    throw error
+  }
+}
+
+export async function fetchProductsByType(productType: string): Promise<SenderoProduct[]> {
+  const supabase = createClient()
+  
+  try {
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('product_type', productType)
+      .order('display_name', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching products by type:', error)
+      throw error
+    }
+
+    return products || []
+
+  } catch (error) {
+    console.error('Error in fetchProductsByType:', error)
+    throw error
+  }
+}
+
+export async function fetchProductBySku(styleNumber: string): Promise<SenderoProduct | null> {
+  const supabase = createClient()
+  
+  try {
+    const { data: product, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('style_number', styleNumber)
+      .single()
+
+    if (error) {
+      console.error('Error fetching product by SKU:', error)
+      throw error
+    }
+
+    return product
+
+  } catch (error) {
+    console.error('Error in fetchProductBySku:', error)
+    throw error
+  }
+}
+
+export async function getProductStats() {
+  const supabase = createClient()
+  
+  try {
+    // Get total count
+    const { count: totalProducts } = await supabase
+      .from('products')
+      .select('id', { count: 'exact' })
+
+    // Get product types count
+    const { data: typeData } = await supabase
+      .from('products')
+      .select('product_type')
+
+    const productTypes = typeData ? [...new Set(typeData.map(p => p.product_type))] : []
+
+    // Get price range
+    const { data: priceData } = await supabase
+      .from('product_summary')
+      .select('msrp_dollars, wholesale_price')
+      .order('msrp_dollars', { ascending: false })
+
+    const maxPrice = priceData?.[0]?.msrp_dollars || 0
+    const minPrice = priceData?.[priceData.length - 1]?.msrp_dollars || 0
+    const avgWholesale = priceData ? 
+      priceData.reduce((sum, p) => sum + p.wholesale_price, 0) / priceData.length : 0
+
+    return {
+      totalProducts: totalProducts || 0,
+      productTypes,
+      priceRange: {
+        min: minPrice,
+        max: maxPrice,
+        avgWholesale: Math.round(avgWholesale * 100) / 100
+      }
+    }
+
+  } catch (error) {
+    console.error('Error in getProductStats:', error)
     throw error
   }
 } 
