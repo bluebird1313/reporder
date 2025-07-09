@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { 
-  fetchSenderoProducts, 
-  SenderoProduct
+  fetchSalesAnalytics, 
+  SalesAnalytics
 } from '@/lib/services/dashboard'
 
 // Real Sendero channels based on their actual product categories
@@ -24,84 +24,83 @@ const channels = ["apparel", "headwear", "accessories"]
 interface TopSellerItem {
   rank: number;
   style: string;
-  color: string;
-  sku: string;
+  channel: string;
   units: number;
   revenue: number;
-  price: number;
-}
-
-// Generate realistic sales data for Sendero products
-function generateSalesData(products: SenderoProduct[]): TopSellerItem[] {
-  return products.slice(0, 10).map((product, index) => {
-    const units = Math.floor(1500 * (1 - index * 0.1) + Math.random() * 300)
-    const price = product.msrp / 100
-    return {
-      rank: index + 1,
-      style: product.style_name,
-      color: product.marketing_color || product.base_color || 'Multi',
-      sku: product.style_number,
-      units,
-      revenue: units * price,
-      price
-    }
-  })
 }
 
 export function TopSellersSection() {
-  const [selectedChannel, setSelectedChannel] = useState("apparel")
+  const [selectedChannel, setSelectedChannel] = useState<string>("all")
+  const [isExpanded, setIsExpanded] = useState(true)
+  const [salesData, setSalesData] = useState<SalesAnalytics | null>(null)
   const [topSellers, setTopSellers] = useState<TopSellerItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [totalProducts, setTotalProducts] = useState(0)
 
   useEffect(() => {
-    const loadProductData = async () => {
+    const loadSalesData = async () => {
       try {
         setLoading(true)
-        const products = await fetchSenderoProducts()
-        setTotalProducts(products.length)
+        const analytics = await fetchSalesAnalytics()
+        setSalesData(analytics)
         
-        // Filter products based on selected channel
-        let filteredProducts = products
-        if (selectedChannel === "apparel") {
-          filteredProducts = products.filter(p => p.product_type === 'Apparel')
-        } else if (selectedChannel === "headwear") {
-          filteredProducts = products.filter(p => p.product_type === 'Headwear')
-        } else if (selectedChannel === "accessories") {
-          filteredProducts = products.filter(p => p.product_type === 'Accessory')
-        }
+        // Transform top products into top sellers format
+        const sellers = analytics.topProducts.map((product, index) => ({
+          rank: index + 1,
+          style: product.display_name,
+          channel: determineChannel(product.style_number),
+          units: product.total_quantity,
+          revenue: product.total_revenue
+        }))
         
-        const salesData = generateSalesData(filteredProducts)
-        setTopSellers(salesData)
+        setTopSellers(sellers)
       } catch (error) {
-        console.error('Error loading product data:', error)
+        console.error('Error loading sales data:', error)
+        // Fallback to empty data
+        setTopSellers([])
       } finally {
         setLoading(false)
       }
     }
 
-    loadProductData()
-  }, [selectedChannel])
+    loadSalesData()
+  }, [])
 
-  const handleChannelClick = (channel: string) => {
-    setSelectedChannel(channel)
+  // Helper function to determine channel based on style number patterns
+  const determineChannel = (styleNumber: string): string => {
+    if (styleNumber.includes('CH') || styleNumber.includes('SPCH')) return 'headwear'
+    if (styleNumber.includes('AC') || styleNumber.includes('SPAC')) return 'accessories'
+    return 'apparel'
+  }
+
+  const filteredTopSellers = selectedChannel === "all" 
+    ? topSellers 
+    : topSellers.filter(item => item.channel === selectedChannel)
+
+  const formatRevenue = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const formatUnits = (units: number) => {
+    return new Intl.NumberFormat('en-US').format(units)
   }
 
   if (loading) {
     return (
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUpIcon className="h-5 w-5" />
-            Top Sellers
-          </CardTitle>
-          <CardDescription>Loading Sendero product data...</CardDescription>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="space-y-1">
+            <CardTitle className="text-base font-medium">Top Sellers</CardTitle>
+            <CardDescription>Loading sales data...</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          <div className="flex items-center justify-center h-32">
+            <div className="text-muted-foreground">Loading...</div>
           </div>
         </CardContent>
       </Card>
@@ -109,109 +108,93 @@ export function TopSellersSection() {
   }
 
   return (
-    <Card className="mt-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUpIcon className="h-5 w-5" />
-          Top Sellers - Real Sendero Products
-        </CardTitle>
-        <CardDescription>
-          Best performing products from our catalog of {totalProducts.toLocaleString()} Sendero items
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Channel Selection */}
-          <div className="flex flex-wrap gap-2">
-            {channels.map((channel) => (
-              <Button
-                key={channel}
-                variant={selectedChannel === channel ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleChannelClick(channel)}
-                className="capitalize"
-              >
-                {channel}
-              </Button>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="space-y-1">
+          <CardTitle className="text-base font-medium">Top Sellers</CardTitle>
+          <CardDescription>
+            Best-performing products by revenue
+            {salesData && ` • ${salesData.totalOrders} total orders`}
+          </CardDescription>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedChannel}
+            onChange={(e) => setSelectedChannel(e.target.value)}
+            className="text-xs border rounded px-2 py-1"
+          >
+            <option value="all">All Channels</option>
+            {channels.map(channel => (
+              <option key={channel} value={channel}>
+                {channel.charAt(0).toUpperCase() + channel.slice(1)}
+              </option>
             ))}
-          </div>
-
-          {/* Top Sellers Table */}
-          {topSellers.length > 0 ? (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">Rank</TableHead>
-                    <TableHead>Style</TableHead>
-                    <TableHead>Color</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead className="text-right">Units Sold</TableHead>
-                    <TableHead className="text-right">Revenue</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {topSellers.map((item) => (
-                    <TableRow key={`${item.sku}-${item.color}`}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={item.rank <= 3 ? "default" : "secondary"}>
-                            #{item.rank}
-                          </Badge>
-                          {item.rank <= 3 && <Star className="h-4 w-4 text-yellow-500" />}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{item.style}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{item.color}</Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {item.units.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        ${item.revenue.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        ${item.price.toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          </select>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-6 w-6 p-0"
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </CardHeader>
+      {isExpanded && (
+        <CardContent className="pt-0">
+          {filteredTopSellers.length === 0 ? (
+            <div className="flex items-center justify-center h-32 text-muted-foreground">
+              No sales data available for {selectedChannel === "all" ? "any channel" : selectedChannel}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No data available for {selectedChannel}
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead className="text-right">Units</TableHead>
+                  <TableHead className="text-right">Revenue</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTopSellers.slice(0, 10).map((item) => (
+                  <TableRow key={item.rank}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {item.rank}
+                        {item.rank <= 3 && (
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium text-sm">{item.style}</div>
+                        <Badge variant="outline" className="text-xs">
+                          {item.channel}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {formatUnits(item.units)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      <div className="flex items-center justify-end gap-1">
+                        <TrendingUpIcon className="h-3 w-3 text-green-600" />
+                        {formatRevenue(item.revenue)}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
-
-          {/* Summary Stats */}
-          {topSellers.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {topSellers.reduce((sum, item) => sum + item.units, 0).toLocaleString()}
-                </div>
-                <div className="text-sm text-muted-foreground">Total Units</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  ${topSellers.reduce((sum, item) => sum + item.revenue, 0).toLocaleString()}
-                </div>
-                <div className="text-sm text-muted-foreground">Total Revenue</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  ${(topSellers.reduce((sum, item) => sum + item.price, 0) / topSellers.length).toFixed(2)}
-                </div>
-                <div className="text-sm text-muted-foreground">Avg Price</div>
-              </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   )
 } 

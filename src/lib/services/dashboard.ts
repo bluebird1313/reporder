@@ -68,6 +68,82 @@ export interface ProductSummary {
   markup_percentage: number;
 }
 
+// Sales Data Interfaces
+export interface CustomerOrder {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  customer_category: string | null;
+  po_number: string | null;
+  sales_rep_name: string | null;
+  transaction_rep_name: string | null;
+  customer_manager_name: string | null;
+  transaction_manager_name: string | null;
+  order_type: string | null;
+  order_status: string | null;
+  nuorder_id: string | null;
+  ship_country: string | null;
+  ship_city: string | null;
+  ship_state: string | null;
+  order_date: string | null;
+  ship_date: string | null;
+  cancelled_date: string | null;
+  total_amount: number | null;
+  total_items: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderLineItem {
+  id: string;
+  order_number: string;
+  style_number: string;
+  gender: string | null;
+  marketing_color: string | null;
+  launch_season: string | null;
+  subcategory: string | null;
+  category: string | null;
+  product_type: string | null;
+  product_season: string | null;
+  quantity: number;
+  qty_pending: number;
+  qty_billed: number;
+  total_amount: number;
+  amount_pending: number;
+  amount_billed: number;
+  unit_price: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SalesAnalytics {
+  totalRevenue: number;
+  totalOrders: number;
+  totalItems: number;
+  averageOrderValue: number;
+  topCustomers: Array<{
+    customer_name: string;
+    total_amount: number;
+    order_count: number;
+  }>;
+  topProducts: Array<{
+    style_number: string;
+    display_name: string;
+    total_quantity: number;
+    total_revenue: number;
+  }>;
+  salesByCategory: Array<{
+    category: string;
+    total_amount: number;
+    total_quantity: number;
+  }>;
+  salesRepPerformance: Array<{
+    sales_rep_name: string;
+    total_amount: number;
+    order_count: number;
+  }>;
+}
+
 export async function fetchDashboardStores(): Promise<DashboardStore[]> {
   const supabase = createClient()
   
@@ -422,6 +498,249 @@ export async function getProductStats() {
 
   } catch (error) {
     console.error('Error in getProductStats:', error)
+    throw error
+  }
+} 
+
+// Sales Data Service Functions
+export async function fetchCustomerOrders(): Promise<CustomerOrder[]> {
+  const supabase = createClient()
+  
+  try {
+    const { data: orders, error } = await supabase
+      .from('customer_orders')
+      .select('*')
+      .order('order_date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching customer orders:', error)
+      throw error
+    }
+
+    return orders || []
+
+  } catch (error) {
+    console.error('Error in fetchCustomerOrders:', error)
+    throw error
+  }
+}
+
+export async function fetchOrderLineItems(orderNumber?: string): Promise<OrderLineItem[]> {
+  const supabase = createClient()
+  
+  try {
+    let query = supabase
+      .from('order_line_items')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (orderNumber) {
+      query = query.eq('order_number', orderNumber)
+    }
+
+    const { data: items, error } = await query
+
+    if (error) {
+      console.error('Error fetching order line items:', error)
+      throw error
+    }
+
+    return items || []
+
+  } catch (error) {
+    console.error('Error in fetchOrderLineItems:', error)
+    throw error
+  }
+}
+
+export async function fetchSalesAnalytics(): Promise<SalesAnalytics> {
+  const supabase = createClient()
+  
+  try {
+    // Get total revenue and orders
+    const { data: orderStats } = await supabase
+      .from('customer_orders')
+      .select('total_amount')
+
+    const totalOrders = orderStats?.length || 0
+    const totalRevenue = orderStats?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
+
+    // Get total items from line items
+    const { data: lineItemStats } = await supabase
+      .from('order_line_items')
+      .select('quantity')
+
+    const totalItems = lineItemStats?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0
+
+    // Calculate average order value
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+
+    // Get top customers
+    const { data: topCustomersData } = await supabase
+      .from('customer_orders')
+      .select('customer_name, total_amount')
+      .not('total_amount', 'is', null)
+
+    const customerTotals = topCustomersData?.reduce((acc: any, order) => {
+      const customer = order.customer_name
+      if (!acc[customer]) {
+        acc[customer] = { total_amount: 0, order_count: 0 }
+      }
+      acc[customer].total_amount += order.total_amount || 0
+      acc[customer].order_count += 1
+      return acc
+    }, {}) || {}
+
+    const topCustomers = Object.entries(customerTotals)
+      .map(([customer_name, stats]: [string, any]) => ({
+        customer_name,
+        total_amount: stats.total_amount,
+        order_count: stats.order_count
+      }))
+      .sort((a, b) => b.total_amount - a.total_amount)
+      .slice(0, 10)
+
+    // Get top products
+    const { data: productData } = await supabase
+      .from('order_line_items')
+      .select('style_number, quantity, total_amount')
+
+    const productTotals = productData?.reduce((acc: any, item) => {
+      const style = item.style_number
+      if (!acc[style]) {
+        acc[style] = { total_quantity: 0, total_revenue: 0 }
+      }
+      acc[style].total_quantity += item.quantity || 0
+      acc[style].total_revenue += item.total_amount || 0
+      return acc
+    }, {}) || {}
+
+    // Get product display names
+    const { data: senderoProducts } = await supabase
+      .from('products')
+      .select('style_number, display_name')
+
+    const topProducts = Object.entries(productTotals)
+      .map(([style_number, stats]: [string, any]) => {
+        const product = senderoProducts?.find(p => p.style_number === style_number)
+        return {
+          style_number,
+          display_name: product?.display_name || style_number,
+          total_quantity: stats.total_quantity,
+          total_revenue: stats.total_revenue
+        }
+      })
+      .sort((a, b) => b.total_revenue - a.total_revenue)
+      .slice(0, 10)
+
+    // Get sales by category
+    const { data: categoryData } = await supabase
+      .from('order_line_items')
+      .select('category, quantity, total_amount')
+
+    const categoryTotals = categoryData?.reduce((acc: any, item) => {
+      const category = item.category || 'Unknown'
+      if (!acc[category]) {
+        acc[category] = { total_amount: 0, total_quantity: 0 }
+      }
+      acc[category].total_amount += item.total_amount || 0
+      acc[category].total_quantity += item.quantity || 0
+      return acc
+    }, {}) || {}
+
+    const salesByCategory = Object.entries(categoryTotals)
+      .map(([category, stats]: [string, any]) => ({
+        category,
+        total_amount: stats.total_amount,
+        total_quantity: stats.total_quantity
+      }))
+      .sort((a, b) => b.total_amount - a.total_amount)
+
+    // Get sales rep performance
+    const { data: repData } = await supabase
+      .from('customer_orders')
+      .select('sales_rep_name, total_amount')
+      .not('sales_rep_name', 'is', null)
+      .not('total_amount', 'is', null)
+
+    const repTotals = repData?.reduce((acc: any, order) => {
+      const rep = order.sales_rep_name
+      if (!acc[rep]) {
+        acc[rep] = { total_amount: 0, order_count: 0 }
+      }
+      acc[rep].total_amount += order.total_amount || 0
+      acc[rep].order_count += 1
+      return acc
+    }, {}) || {}
+
+    const salesRepPerformance = Object.entries(repTotals)
+      .map(([sales_rep_name, stats]: [string, any]) => ({
+        sales_rep_name,
+        total_amount: stats.total_amount,
+        order_count: stats.order_count
+      }))
+      .sort((a, b) => b.total_amount - a.total_amount)
+      .slice(0, 10)
+
+    return {
+      totalRevenue,
+      totalOrders,
+      totalItems,
+      averageOrderValue,
+      topCustomers,
+      topProducts,
+      salesByCategory,
+      salesRepPerformance
+    }
+
+  } catch (error) {
+    console.error('Error in fetchSalesAnalytics:', error)
+    throw error
+  }
+}
+
+export async function fetchRecentOrders(limit: number = 10): Promise<CustomerOrder[]> {
+  const supabase = createClient()
+  
+  try {
+    const { data: orders, error } = await supabase
+      .from('customer_orders')
+      .select('*')
+      .order('order_date', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('Error fetching recent orders:', error)
+      throw error
+    }
+
+    return orders || []
+
+  } catch (error) {
+    console.error('Error in fetchRecentOrders:', error)
+    throw error
+  }
+}
+
+export async function fetchOrdersByCustomer(customerName: string): Promise<CustomerOrder[]> {
+  const supabase = createClient()
+  
+  try {
+    const { data: orders, error } = await supabase
+      .from('customer_orders')
+      .select('*')
+      .ilike('customer_name', `%${customerName}%`)
+      .order('order_date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching orders by customer:', error)
+      throw error
+    }
+
+    return orders || []
+
+  } catch (error) {
+    console.error('Error in fetchOrdersByCustomer:', error)
     throw error
   }
 } 
