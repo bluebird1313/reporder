@@ -557,36 +557,47 @@ export async function fetchSalesAnalytics(): Promise<SalesAnalytics> {
   const supabase = createClient()
   
   try {
-    // Get total revenue and orders
-    const { data: orderStats } = await supabase
-      .from('customer_orders')
-      .select('total_amount')
-
-    const totalOrders = orderStats?.length || 0
-    const totalRevenue = orderStats?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
-
-    // Get total items from line items
+    // Get total revenue from line items (the real source of revenue data)
     const { data: lineItemStats } = await supabase
       .from('order_line_items')
-      .select('quantity')
+      .select('quantity, total_amount')
 
     const totalItems = lineItemStats?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0
+    const totalRevenue = lineItemStats?.reduce((sum, item) => sum + (item.total_amount || 0), 0) || 0
+
+    // Get total orders count
+    const { data: orderStats } = await supabase
+      .from('customer_orders')
+      .select('order_number')
+
+    const totalOrders = orderStats?.length || 0
 
     // Calculate average order value
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
 
-    // Get top customers
-    const { data: topCustomersData } = await supabase
+    // Get top customers by joining orders with line items to get real revenue
+    const { data: customerRevenueData } = await supabase
       .from('customer_orders')
-      .select('customer_name, total_amount')
-      .not('total_amount', 'is', null)
+      .select(`
+        customer_name,
+        order_number,
+        order_line_items!inner(
+          total_amount
+        )
+      `)
 
-    const customerTotals = topCustomersData?.reduce((acc: any, order) => {
+    const customerTotals = customerRevenueData?.reduce((acc: any, order) => {
       const customer = order.customer_name
       if (!acc[customer]) {
         acc[customer] = { total_amount: 0, order_count: 0 }
       }
-      acc[customer].total_amount += order.total_amount || 0
+      
+      // Sum up all line items for this order
+      const orderTotal = (order.order_line_items as any[]).reduce((sum, item) => 
+        sum + (item.total_amount || 0), 0
+      )
+      
+      acc[customer].total_amount += orderTotal
       acc[customer].order_count += 1
       return acc
     }, {}) || {}
@@ -656,19 +667,29 @@ export async function fetchSalesAnalytics(): Promise<SalesAnalytics> {
       }))
       .sort((a, b) => b.total_amount - a.total_amount)
 
-    // Get sales rep performance
-    const { data: repData } = await supabase
+    // Get sales rep performance (using line items for revenue)
+    const { data: repRevenueData } = await supabase
       .from('customer_orders')
-      .select('sales_rep_name, total_amount')
+      .select(`
+        sales_rep_name,
+        order_line_items!inner(
+          total_amount
+        )
+      `)
       .not('sales_rep_name', 'is', null)
-      .not('total_amount', 'is', null)
 
-    const repTotals = repData?.reduce((acc: any, order) => {
+    const repTotals = repRevenueData?.reduce((acc: any, order) => {
       const rep = order.sales_rep_name
       if (!acc[rep]) {
         acc[rep] = { total_amount: 0, order_count: 0 }
       }
-      acc[rep].total_amount += order.total_amount || 0
+      
+      // Sum up all line items for this order
+      const orderTotal = (order.order_line_items as any[]).reduce((sum, item) => 
+        sum + (item.total_amount || 0), 0
+      )
+      
+      acc[rep].total_amount += orderTotal
       acc[rep].order_count += 1
       return acc
     }, {}) || {}
