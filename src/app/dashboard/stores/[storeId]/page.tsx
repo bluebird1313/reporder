@@ -1,132 +1,511 @@
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { fetchStoreById, DashboardStore } from '@/lib/services/dashboard';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import * as React from "react"
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
+import { createClient } from "@/lib/supabase/browser"
+import { toast } from "sonner"
+import {
+  Building2,
+  ArrowLeft,
+  LogOut,
+  UserCircle,
+  Settings,
+  TrendingUp,
+  DollarSign,
+  Calendar,
+  Users,
+  Phone,
+  MapPin,
+  Mail,
+  Package,
+  Clock,
+  BarChart3,
+  Target,
+  AlertCircle,
+  CheckCircle2
+} from "lucide-react"
 
-type Props = {
-  params: Promise<{ storeId: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-};
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { 
+  fetchSimpleStoreDetails, 
+  SimpleStoreData
+} from '@/lib/services/stores-simple'
 
-// This is how Next.js gets URL parameters for a page
-export default function StoreDetailsPage({ params }: Props) {
-  const [storeId, setStoreId] = useState<string | null>(null);
-  const [store, setStore] = useState<DashboardStore | null>(null);
-  const [loading, setLoading] = useState(true);
+// Navigation items
+const navigationItems = [
+  { title: "Overview", icon: Building2, href: "/dashboard" },
+  { title: "Stores", icon: Building2, href: "/dashboard/stores" },
+  { title: "Inventory", icon: Building2, href: "/dashboard/inventory" },
+  { title: "Reports", icon: Building2, href: "/dashboard/reports" },
+  { title: "Users", icon: Building2, href: "/dashboard/users" },
+  { title: "Settings", icon: Settings, href: "/dashboard/settings" },
+]
+
+function AppSidebar() {
+  return (
+    <Sidebar>
+      <SidebarHeader>
+        <div className="flex items-center gap-2 px-4 py-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-600 to-slate-800 text-white">
+            <span className="text-lg font-bold">RO</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-semibold">RepOrder</span>
+            <span className="text-xs text-muted-foreground">Inventory System</span>
+          </div>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={item.href === "/dashboard/stores"}>
+                    <a href={item.href}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <div className="p-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="h-2 w-2 rounded-full bg-green-500" />
+            System Online
+          </div>
+        </div>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  )
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0
+  }).format(amount)
+}
+
+function formatDate(dateString: string | null): string {
+  if (!dateString) return 'Never'
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+function getStatusBadgeVariant(status: string) {
+  switch (status) {
+    case 'Active': return 'default'
+    case 'Inactive': return 'secondary'
+    case 'New': return 'outline'
+    default: return 'secondary'
+  }
+}
+
+function getHealthBadgeVariant(score: number) {
+  if (score >= 80) return 'default'
+  if (score >= 60) return 'secondary'
+  if (score >= 40) return 'destructive'
+  return 'destructive'
+}
+
+function getHealthLabel(score: number) {
+  if (score >= 80) return 'Excellent'
+  if (score >= 60) return 'Good'
+  if (score >= 40) return 'Fair'
+  return 'Poor'
+}
+
+export default function StoreDetailPage() {
+  const [store, setStore] = useState<SimpleStoreData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const params = useParams()
+  const storeId = params.storeId as string
 
   useEffect(() => {
-    const getParams = async () => {
-      const resolvedParams = await params;
-      setStoreId(resolvedParams.storeId);
-    };
-    getParams();
-  }, [params]);
-
-  useEffect(() => {
-    if (!storeId) return;
-
-    const loadStore = async () => {
+    const loadStoreDetails = async () => {
       try {
-        setLoading(true);
-        const storeData = await fetchStoreById(storeId);
-        setStore(storeData);
+        setLoading(true)
+        const storeData = await fetchSimpleStoreDetails(storeId)
+        setStore(storeData)
       } catch (error) {
-        console.error('Error loading store:', error);
-        toast.error('Failed to load store details');
+        console.error('Error loading store details:', error)
+        toast.error('Failed to load store details')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    loadStore();
-  }, [storeId]);
+    if (storeId) {
+      loadStoreDetails()
+    }
+  }, [storeId])
+
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        toast.error('Error signing out: ' + error.message)
+      } else {
+        toast.success('Signed out successfully!')
+        router.push('/sign-in')
+      }
+    } catch {
+      toast.error('An unexpected error occurred')
+    }
+  }
+
+  const handleBackToStores = () => {
+    router.push('/dashboard/stores')
+  }
 
   if (loading) {
     return (
-      <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Loading...</h1>
-      </div>
-    );
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <div className="flex items-center justify-center h-96">
+            <div className="text-lg">Loading store details...</div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    )
   }
 
   if (!store) {
     return (
-      <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Store Not Found</h1>
-        <p>Sorry, we couldn&apos;t find a store with that ID.</p>
-      </div>
-    );
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <div className="flex items-center justify-center h-96">
+            <div className="text-lg">Store not found</div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    )
   }
 
-  // Placeholder data for purchase history
-  const purchaseHistory = [
-    { orderId: '#12345', date: '2024-05-20', total: 5432.10, status: 'Completed' },
-    { orderId: '#12344', date: '2024-05-18', total: 312.50, status: 'Completed' },
-    { orderId: '#12342', date: '2024-05-15', total: 1890.00, status: 'Processing' },
-    { orderId: '#12341', date: '2024-05-11', total: 89.99, status: 'Completed' },
-  ];
-
   return (
-    <div className="p-4 sm:p-6 md:p-8">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Store Details</h1>
-      
-      {/* Store Information Card */}
-      <Card className="mb-8 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-xl sm:text-2xl">{store.name}</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2">
-          <p><strong>Location:</strong> {store.location}</p>
-          <p><strong>Total Items:</strong> {store.totalItems.toLocaleString()}</p>
-          <p><strong>Low Stock Items:</strong> {store.lowStockItems}</p>
-          <p><strong>Out of Stock Items:</strong> {store.outOfStock}</p>
-          <div>
-            <strong>Inventory Health:</strong> {store.inventoryHealth}%
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        {/* Header */}
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <div className="flex flex-1 items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={handleBackToStores}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Stores
+            </Button>
+            <div className="h-6 w-px bg-border" />
+            <div>
+              <h1 className="font-semibold">{store.name}</h1>
+              <p className="text-sm text-muted-foreground">{store.address}</p>
+            </div>
+            <div className="ml-auto flex items-center gap-4">
+              <Badge variant={getStatusBadgeVariant(store.status)} className="ml-2">
+                {store.status}
+              </Badge>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0">
+                    <span className="text-xs font-medium">HG</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </header>
 
-      {/* Purchase History Card */}
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle className="text-xl sm:text-2xl">Purchase History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Total Amount</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {purchaseHistory.map((order) => (
-                  <TableRow key={order.orderId}>
-                    <TableCell className="font-medium">{order.orderId}</TableCell>
-                    <TableCell>{order.date}</TableCell>
-                    <TableCell className="text-right">${order.total.toLocaleString()}</TableCell>
-                    <TableCell className="text-center">
-                      <span 
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          order.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {order.status}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+        {/* Main Content */}
+        <div className="flex flex-1 flex-col gap-6 p-4">
+          {/* Store Overview Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(store.total_revenue)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Lifetime partnership value
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{store.total_orders.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  {store.total_items_sold.toLocaleString()} items sold
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(store.avg_order_value)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Per order average
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Health Score</CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <div className="text-2xl font-bold">{store.health_score}%</div>
+                  <Badge variant={getHealthBadgeVariant(store.health_score)} className="text-xs">
+                    {getHealthLabel(store.health_score)}
+                  </Badge>
+                </div>
+                <Progress value={store.health_score} className="mt-2" />
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+
+          {/* Store Information & Rep Details */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Store Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 mt-1 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">{store.name}</div>
+                    <div className="text-sm text-muted-foreground">{store.address}</div>
+                  </div>
+                </div>
+                {store.customer_match && (
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-4 w-4 mt-1 text-green-600" />
+                    <div>
+                      <div className="font-medium">Customer Match</div>
+                      <div className="text-sm text-muted-foreground">{store.customer_match}</div>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-4 w-4 mt-1 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">Last Order</div>
+                    <div className="text-sm text-muted-foreground">{formatDate(store.last_order_date)}</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="h-4 w-4 mt-1 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">Partnership Since</div>
+                    <div className="text-sm text-muted-foreground">{formatDate(store.created_at)}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Sales Rep Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {store.primary_sales_rep ? (
+                  <>
+                    <div className="flex items-start gap-3">
+                      <UserCircle className="h-4 w-4 mt-1 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">{store.primary_sales_rep}</div>
+                        <div className="text-sm text-muted-foreground">Primary Sales Representative</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button size="sm" variant="outline">
+                        <Phone className="h-4 w-4 mr-2" />
+                        Call Rep
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Email Rep
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    <div>
+                      <div>No assigned sales representative</div>
+                      <div className="text-sm">Consider assigning a rep to this store</div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity Metrics */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Last 30 Days</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{store.orders_last_30_days}</div>
+                <p className="text-xs text-muted-foreground">
+                  Orders • {formatCurrency(store.revenue_last_30_days)} revenue
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Last 90 Days</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{store.orders_last_90_days}</div>
+                <p className="text-xs text-muted-foreground">
+                  Orders • {formatCurrency(store.revenue_last_90_days)} revenue
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Order Frequency</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {store.orders_last_90_days > 0 ? Math.round(90 / store.orders_last_90_days) : 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Days between orders (avg)
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Action Items for Rep */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Rep Action Items</CardTitle>
+              <CardDescription>Recommended next steps for this store partnership</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {store.orders_last_30_days === 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <AlertCircle className="h-5 w-5 text-yellow-600" />
+                    <div>
+                      <div className="font-medium text-yellow-800">No recent orders</div>
+                      <div className="text-sm text-yellow-700">Consider reaching out to check on inventory needs</div>
+                    </div>
+                  </div>
+                )}
+                {store.health_score < 60 && (
+                  <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <div>
+                      <div className="font-medium text-red-800">Low health score</div>
+                      <div className="text-sm text-red-700">Schedule a meeting to discuss partnership improvement</div>
+                    </div>
+                  </div>
+                )}
+                {!store.primary_sales_rep && (
+                  <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <Users className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <div className="font-medium text-blue-800">No assigned rep</div>
+                      <div className="text-sm text-blue-700">Assign a sales representative to this store</div>
+                    </div>
+                  </div>
+                )}
+                {store.health_score >= 80 && store.orders_last_30_days > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <div>
+                      <div className="font-medium text-green-800">Excellent performance</div>
+                      <div className="text-sm text-green-700">Consider expanding product lines or increasing order volume</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  )
 } 
