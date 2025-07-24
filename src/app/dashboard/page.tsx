@@ -29,6 +29,8 @@ import {
   ShoppingCart,
   BarChart3,
   UserCheck,
+  Tag,
+  Target,
 } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -69,7 +71,17 @@ import {
   SalesAnalytics,
   CustomerOrder
 } from '@/lib/services/dashboard'
+import { 
+  useGoalProgress, 
+  useStockAlerts, 
+  useForecast,
+  useSalesMetrics
+} from '@/lib/services/dashboard-goals'
 import { TopSellersSection } from '@/components/dashboard/TopSellersSection'
+import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard'
+import { LowStockAlert } from '@/components/dashboard/LowStockAlert'
+import { ForecastWidget } from '@/components/dashboard/ForecastWidget'
+import { BrandFilter } from '@/components/dashboard/BrandFilter'
 
 const navigationItems = [
   {
@@ -77,6 +89,24 @@ const navigationItems = [
     icon: Home,
     href: "/dashboard",
     isActive: true,
+  },
+  {
+    title: "Brands",
+    icon: Tag,
+    href: "/dashboard/brands",
+    isActive: false,
+  },
+  {
+    title: "Goals",
+    icon: Target,
+    href: "/dashboard/goals",
+    isActive: false,
+  },
+  {
+    title: "Forecast",
+    icon: TrendingUp,
+    href: "/dashboard/forecast",
+    isActive: false,
   },
   {
     title: "Stores",
@@ -92,20 +122,8 @@ const navigationItems = [
   },
   {
     title: "Reports",
-    icon: TrendingUp,
+    icon: BarChart3,
     href: "/dashboard/reports",
-    isActive: false,
-  },
-  {
-    title: "Users",
-    icon: Users,
-    href: "/dashboard/users",
-    isActive: false,
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    href: "/dashboard/settings",
     isActive: false,
   },
 ]
@@ -389,6 +407,22 @@ export default function SalesDashboard() {
   const [analytics, setAnalytics] = React.useState<SalesAnalytics | null>(null)
   const [recentOrders, setRecentOrders] = React.useState<CustomerOrder[]>([])
   const [loading, setLoading] = React.useState(true)
+  
+  // URL state management for brand filtering
+  const [selectedBrands, setSelectedBrands] = React.useState<string[]>([])
+  const [availableBrands, setAvailableBrands] = React.useState<string[]>([])
+  const [favoriteBrands, setFavoriteBrands] = React.useState<string[]>([])
+
+  // Mock rep ID - in a real app this would come from auth context
+  const repId = "mock-rep-id"
+
+  // React Query hooks for new dashboard features
+  const { data: goalProgress, isLoading: goalsLoading } = useGoalProgress(repId, 'month')
+  const { data: stockAlerts, isLoading: alertsLoading, refetch: refetchAlerts } = useStockAlerts()
+  const { data: forecastData, isLoading: forecastLoading } = useForecast(
+    undefined, 
+    selectedBrands.length === 1 ? selectedBrands[0] : undefined
+  )
 
   React.useEffect(() => {
     const loadData = async () => {
@@ -401,6 +435,16 @@ export default function SalesDashboard() {
         
         setAnalytics(analyticsData)
         setRecentOrders(ordersData)
+
+        // Extract unique brands from analytics data
+        if (analyticsData) {
+          const brands = Array.from(new Set([
+            ...analyticsData.topProducts.map(p => 'Sendero'), // Default brand for now
+            'Sendero', 'Nike', 'Adidas', 'Puma', 'Under Armour' // Mock brands
+          ]))
+          setAvailableBrands(brands)
+          setSelectedBrands(brands) // Start with all brands selected
+        }
       } catch (error) {
         console.error('Error loading dashboard data:', error)
         toast.error('Failed to load dashboard data')
@@ -410,6 +454,37 @@ export default function SalesDashboard() {
     }
 
     loadData()
+  }, [])
+
+  // Handle brand filter changes
+  const handleBrandChange = (brands: string[]) => {
+    setSelectedBrands(brands)
+    // Update URL params
+    const params = new URLSearchParams(window.location.search)
+    if (brands.length > 0) {
+      params.set('brands', brands.join(','))
+    } else {
+      params.delete('brands')
+    }
+    const newUrl = `${window.location.pathname}?${params.toString()}`
+    window.history.replaceState({}, '', newUrl)
+  }
+
+  const handleToggleFavorite = (brand: string) => {
+    setFavoriteBrands(prev => 
+      prev.includes(brand) 
+        ? prev.filter(b => b !== brand)
+        : [...prev, brand]
+    )
+  }
+
+  // Load URL params on mount
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const brandsParam = params.get('brands')
+    if (brandsParam) {
+      setSelectedBrands(brandsParam.split(','))
+    }
   }, [])
 
   const handleSignOut = async () => {
@@ -453,8 +528,59 @@ export default function SalesDashboard() {
         </header>
         
         <div className="flex-1 space-y-4 p-8 pt-6">
-          {/* Sales Metrics Cards */}
-          <SalesMetricsCards analytics={analytics} />
+          {/* Brand Filter Section */}
+          <div className="grid gap-4 lg:grid-cols-4">
+            <div className="lg:col-span-1">
+              <BrandFilter
+                availableBrands={availableBrands}
+                selectedBrands={selectedBrands}
+                onBrandChange={handleBrandChange}
+                favoriteBrands={favoriteBrands}
+                onToggleFavorite={handleToggleFavorite}
+                isLoading={loading}
+              />
+            </div>
+            <div className="lg:col-span-3">
+              <SalesMetricsCards analytics={analytics} />
+            </div>
+          </div>
+
+          {/* Goal Progress Cards */}
+          {goalProgress && goalProgress.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Goal Progress</h2>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {goalProgress.slice(0, 6).map((goal) => (
+                  <GoalProgressCard
+                    key={goal.id}
+                    goal={goal}
+                    onClick={() => {
+                      // TODO: Open goal breakdown dialog
+                      toast.info(`Goal breakdown for ${goal.brand} ${goal.goal_type}`)
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Forecast and Stock Alerts */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <ForecastWidget
+                data={forecastData || []}
+                isLoading={forecastLoading}
+                selectedBrand={selectedBrands.length === 1 ? selectedBrands[0] : undefined}
+              />
+            </div>
+            <div className="lg:col-span-1">
+              <LowStockAlert
+                alerts={stockAlerts || []}
+                isLoading={alertsLoading}
+                onRefresh={() => refetchAlerts()}
+              />
+            </div>
+          </div>
           
           {/* Top Sellers Section */}
           <TopSellersSection />
