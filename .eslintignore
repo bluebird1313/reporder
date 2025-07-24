@@ -1,0 +1,16 @@
+# Supabase Edge Functions (use Deno, not Node.js)
+supabase/
+
+# Build outputs
+.next/
+out/
+dist/
+
+# Node modules
+node_modules/
+
+# Environment files
+.env*
+
+# Logs
+*.log 
