@@ -15,7 +15,9 @@ import { toast } from "sonner"
 
 export function SignInForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isResending, setIsResending] = useState(false)
   const [error, setError] = useState("")
+  const [showResendButton, setShowResendButton] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -61,16 +63,23 @@ export function SignInForm() {
           cause: error.cause
         })
         
-        // Provide more specific error messages
+        // Provide more specific error messages and show resend button if needed
         let errorMessage = error.message
         if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password. The account may not exist or the password is incorrect. Try signing up first or check your credentials.'
+          errorMessage = 'Login failed. This could be due to: (1) Incorrect email/password, (2) Account not yet confirmed via email, or (3) Account does not exist. Please check your email for a confirmation link or try signing up again.'
+          setShowResendButton(true) // Show resend button for potential confirmation issues
         } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Please check your email and click the confirmation link before signing in.'
+          errorMessage = 'Please check your email and click the confirmation link before signing in. Check your spam folder if you don\'t see the email.'
+          setShowResendButton(true)
         } else if (error.message.includes('Too many requests')) {
           errorMessage = 'Too many login attempts. Please wait a few minutes and try again.'
+          setShowResendButton(false)
         } else if (error.message.includes('User not found')) {
           errorMessage = 'No account found with this email address. Please sign up first.'
+          setShowResendButton(false)
+        } else if (error.message.includes('signup_disabled')) {
+          errorMessage = 'New user signups are currently disabled. Please contact support.'
+          setShowResendButton(false)
         }
         
         setError(errorMessage)
@@ -101,6 +110,39 @@ export function SignInForm() {
       ...prev,
       [e.target.name]: e.target.value,
     }))
+    // Hide resend button when user types
+    if (showResendButton) {
+      setShowResendButton(false)
+    }
+  }
+
+  const handleResendConfirmation = async () => {
+    if (!formData.email) {
+      toast.error('Please enter your email address first')
+      return
+    }
+
+    setIsResending(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: formData.email.trim().toLowerCase(),
+      })
+
+      if (error) {
+        console.error('Resend error:', error)
+        toast.error('Failed to resend confirmation email: ' + error.message)
+      } else {
+        toast.success('Confirmation email sent! Please check your inbox and spam folder.')
+        setShowResendButton(false)
+      }
+    } catch (err) {
+      console.error('Resend unexpected error:', err)
+      toast.error('Failed to resend confirmation email')
+    } finally {
+      setIsResending(false)
+    }
   }
 
   return (
@@ -184,6 +226,25 @@ export function SignInForm() {
                   "Sign in"
                 )}
               </Button>
+
+              {showResendButton && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11"
+                  disabled={isResending}
+                  onClick={handleResendConfirmation}
+                >
+                  {isResending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Resend Confirmation Email"
+                  )}
+                </Button>
+              )}
 
               <div className="text-center text-sm text-gray-600">
                 {"Don't have an account? "}

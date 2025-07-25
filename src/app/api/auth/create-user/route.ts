@@ -78,6 +78,7 @@ export async function GET() {
       email: user.email,
       created_at: user.created_at,
       email_confirmed_at: user.email_confirmed_at,
+      is_confirmed: !!user.email_confirmed_at,
       metadata: user.user_metadata,
     }))
 
@@ -85,9 +86,76 @@ export async function GET() {
       success: true,
       users,
       total: users.length,
+      confirmed_users: users.filter(u => u.is_confirmed).length,
+      unconfirmed_users: users.filter(u => !u.is_confirmed).length,
     })
   } catch (error) {
     console.error('List users API error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH - Confirm a user manually (for testing)
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { email } = body
+
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Email is required' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = await createClient()
+
+    // First, get the user by email
+    const { data: listData, error: listError } = await supabase.auth.admin.listUsers()
+    
+    if (listError) {
+      return NextResponse.json(
+        { error: listError.message },
+        { status: 400 }
+      )
+    }
+
+    const user = listData.users.find(u => u.email === email.trim().toLowerCase())
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Confirm the user
+    const { data, error } = await supabase.auth.admin.updateUserById(user.id, {
+      email_confirm: true
+    })
+
+    if (error) {
+      console.error('Confirm user error:', error)
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'User confirmed successfully',
+      user: {
+        id: data.user?.id,
+        email: data.user?.email,
+        email_confirmed_at: data.user?.email_confirmed_at,
+      },
+    })
+  } catch (error) {
+    console.error('Confirm user API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
