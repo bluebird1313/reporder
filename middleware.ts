@@ -6,47 +6,59 @@ export async function middleware(request: NextRequest) {
     request,
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+            supabaseResponse = NextResponse.next({
+              request,
+            })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            )
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
+      }
+    )
 
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    // IMPORTANT: DO NOT REMOVE auth.getUser()
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser()
 
-  // Check auth for protected routes
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    // If no user and trying to access dashboard, redirect to sign-in
-    if (!user) {
-      const redirectUrl = new URL('/sign-in', request.url)
-      redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
-      return NextResponse.redirect(redirectUrl)
+    if (error) {
+      console.error('Middleware auth error:', error)
+      // Don't block the request if auth fails, just continue without user
     }
-  }
 
-  // If authenticated and trying to access auth pages, redirect to dashboard
-  if (request.nextUrl.pathname.startsWith('/sign-in') || request.nextUrl.pathname.startsWith('/sign-up')) {
-    if (user) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+    // Check auth for protected routes
+    if (request.nextUrl.pathname.startsWith('/dashboard')) {
+      // If no user and trying to access dashboard, redirect to sign-in
+      if (!user) {
+        const redirectUrl = new URL('/sign-in', request.url)
+        redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+        return NextResponse.redirect(redirectUrl)
+      }
     }
+
+    // If authenticated and trying to access auth pages, redirect to dashboard
+    if (request.nextUrl.pathname.startsWith('/sign-in') || request.nextUrl.pathname.startsWith('/sign-up')) {
+      if (user) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    }
+
+  } catch (error) {
+    console.error('Middleware error:', error)
+    // Don't block the request if middleware fails
   }
 
   return supabaseResponse
