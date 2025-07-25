@@ -433,44 +433,38 @@ export default function SalesDashboard() {
     )
   }
 
-  // React Query hooks for dashboard features (using mock user ID)
-  const { data: goalProgress, isLoading: goalsLoading } = useGoalProgress('mock-user-id', 'month')
-  const { data: stockAlerts, isLoading: alertsLoading, refetch: refetchAlerts } = useStockAlerts()
-  const { data: forecastData, isLoading: forecastLoading } = useForecast(
+  // React Query hooks for dashboard features (using mock user ID) - with error handling
+  const { data: goalProgress, isLoading: goalsLoading, error: goalsError } = useGoalProgress('mock-user-id', 'month')
+  const { data: stockAlerts, isLoading: alertsLoading, refetch: refetchAlerts, error: alertsError } = useStockAlerts()
+  const { data: forecastData, isLoading: forecastLoading, error: forecastError } = useForecast(
     undefined, 
     selectedBrands.length === 1 ? selectedBrands[0] : undefined
   )
 
   React.useEffect(() => {
-    const loadData = async () => {
+    // TEMPORARILY DISABLED database calls - using mock data instead
+    const loadMockData = () => {
       try {
         setLoading(true)
-        const [analyticsData, ordersData] = await Promise.all([
-          fetchSalesAnalytics(),
-          fetchRecentOrders(10)
-        ])
         
-        setAnalytics(analyticsData)
-        setRecentOrders(ordersData)
+        // Set analytics and orders to null for now (no database calls)
+        setAnalytics(null)
+        setRecentOrders([])
 
-        // Extract unique brands from analytics data
-        if (analyticsData) {
-          const brands = Array.from(new Set([
-            ...analyticsData.topProducts.map(p => 'Sendero'), // Default brand for now
-            'Sendero', 'Nike', 'Adidas', 'Puma', 'Under Armour' // Mock brands
-          ]))
-          setAvailableBrands(brands)
-          setSelectedBrands(brands) // Start with all brands selected
-        }
+        // Set mock brands
+        const brands = ['Sendero', 'Nike', 'Adidas', 'Puma', 'Under Armour']
+        setAvailableBrands(brands)
+        setSelectedBrands(brands) // Start with all brands selected
+        
       } catch (error) {
-        console.error('Error loading dashboard data:', error)
-        toast.error('Failed to load dashboard data')
+        console.error('Error loading mock data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    loadData()
+    // Small delay to simulate loading
+    setTimeout(loadMockData, 500)
   }, [])
 
   // Handle brand filter changes
