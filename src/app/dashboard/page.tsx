@@ -415,55 +415,26 @@ export default function SalesDashboard() {
   const [availableBrands, setAvailableBrands] = React.useState<string[]>([])
   const [favoriteBrands, setFavoriteBrands] = React.useState<string[]>([])
 
-  // Check authentication status
+  // TEMPORARILY BYPASS AUTH - Set mock user data
   React.useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const supabase = createClient()
-        const { data: { user }, error } = await supabase.auth.getUser()
-        
-        if (error) {
-          console.error('Auth error:', error)
-          router.push('/sign-in')
-          return
-        }
-        
-        if (!user) {
-          router.push('/sign-in')
-          return
-        }
-        
-        setUser(user)
-      } catch (error) {
-        console.error('Auth check failed:', error)
-        router.push('/sign-in')
-      } finally {
-        setAuthLoading(false)
-      }
-    }
-    
-    checkAuth()
-  }, [router])
+    setUser({ id: 'mock-user-id', email: 'demo@reporder.com' })
+    setAuthLoading(false)
+  }, [])
 
-  // Show loading screen while checking authentication
+  // Show loading screen while setting up
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading...</p>
+          <p className="mt-2 text-gray-600">Loading Dashboard...</p>
         </div>
       </div>
     )
   }
 
-  // Redirect if not authenticated
-  if (!user) {
-    return null
-  }
-
-  // React Query hooks for dashboard features (only run when authenticated)
-  const { data: goalProgress, isLoading: goalsLoading } = useGoalProgress(user.id, 'month')
+  // React Query hooks for dashboard features (using mock user ID)
+  const { data: goalProgress, isLoading: goalsLoading } = useGoalProgress('mock-user-id', 'month')
   const { data: stockAlerts, isLoading: alertsLoading, refetch: refetchAlerts } = useStockAlerts()
   const { data: forecastData, isLoading: forecastLoading } = useForecast(
     undefined, 

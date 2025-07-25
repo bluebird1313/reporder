@@ -2,66 +2,10 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
+  // TEMPORARILY BYPASS ALL AUTH - Allow all routes without authentication
+  return NextResponse.next({
     request,
   })
-
-  try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-            supabaseResponse = NextResponse.next({
-              request,
-            })
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
-            )
-          },
-        },
-      }
-    )
-
-    // IMPORTANT: DO NOT REMOVE auth.getUser()
-    const {
-      data: { user },
-      error
-    } = await supabase.auth.getUser()
-
-    if (error) {
-      console.error('Middleware auth error:', error)
-      // Don't block the request if auth fails, just continue without user
-    }
-
-    // Check auth for protected routes
-    if (request.nextUrl.pathname.startsWith('/dashboard')) {
-      // If no user and trying to access dashboard, redirect to sign-in
-      if (!user) {
-        const redirectUrl = new URL('/sign-in', request.url)
-        redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
-        return NextResponse.redirect(redirectUrl)
-      }
-    }
-
-    // If authenticated and trying to access auth pages, redirect to dashboard
-    if (request.nextUrl.pathname.startsWith('/sign-in') || request.nextUrl.pathname.startsWith('/sign-up')) {
-      if (user) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-      }
-    }
-
-  } catch (error) {
-    console.error('Middleware error:', error)
-    // Don't block the request if middleware fails
-  }
-
-  return supabaseResponse
 }
 
 export const config = {

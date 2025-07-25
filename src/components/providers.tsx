@@ -23,11 +23,10 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {children}
-        <Toaster richColors position="top-right" />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </AuthProvider>
+      {/* TEMPORARILY REMOVED AuthProvider to bypass all auth */}
+      {children}
+      <Toaster richColors position="top-right" />
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   )
 } 

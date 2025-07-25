@@ -353,6 +353,7 @@ export function useGoalProgress(repId: string, period: 'day' | 'week' | 'month' 
     queryFn: () => fetchGoalProgress(repId, period),
     enabled: !!repId && repId !== 'placeholder-id',
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: false, // Don't retry on auth failures
   })
 }
 
@@ -361,6 +362,7 @@ export function useStockAlerts(storeId?: string) {
     queryKey: ['stockAlerts', storeId],
     queryFn: () => fetchStockAlerts(storeId),
     staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: false, // Don't retry on auth failures
   })
 }
 
@@ -369,6 +371,7 @@ export function useForecast(storeId?: string, brand?: string) {
     queryKey: ['forecast', storeId, brand],
     queryFn: () => generateForecast(storeId, brand),
     staleTime: 30 * 60 * 1000, // 30 minutes
+    retry: false, // Don't retry on auth failures
   })
 }
 
