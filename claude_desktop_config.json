@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "terminal": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@dillip285/mcp-terminal",
+        "--allowed-paths",
+        "C:\\Users\\tglas\\RepOrder\\reporder"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:\\Users\\tglas\\RepOrder\\reporder"
+      ]
+    },
+    "git": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-git",
+        "--repository",
+        "C:\\Users\\tglas\\RepOrder\\reporder"
+      ]
+    }
+  }
+} 

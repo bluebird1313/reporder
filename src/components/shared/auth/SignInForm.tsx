@@ -44,21 +44,33 @@ export function SignInForm() {
         return
       }
       
+      console.log('Attempting sign in with email:', formData.email.trim().toLowerCase())
+      
       const { error, data } = await supabase.auth.signInWithPassword({
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
       })
 
+      console.log('Auth response:', { error, user: data?.user?.email, session: !!data?.session })
+
       if (error) {
-        console.error('Auth error:', error)
+        console.error('Auth error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          cause: error.cause
+        })
+        
         // Provide more specific error messages
         let errorMessage = error.message
         if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password. Please check your credentials and try again.'
+          errorMessage = 'Invalid email or password. The account may not exist or the password is incorrect. Try signing up first or check your credentials.'
         } else if (error.message.includes('Email not confirmed')) {
           errorMessage = 'Please check your email and click the confirmation link before signing in.'
         } else if (error.message.includes('Too many requests')) {
           errorMessage = 'Too many login attempts. Please wait a few minutes and try again.'
+        } else if (error.message.includes('User not found')) {
+          errorMessage = 'No account found with this email address. Please sign up first.'
         }
         
         setError(errorMessage)

@@ -54,8 +54,16 @@ export default function SignUpPage() {
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signUp({
-        email,
+      
+      console.log('Attempting to sign up with:', {
+        email: email.trim().toLowerCase(),
+        fullName,
+        role,
+        companyName: role === 'company' ? companyName : null
+      })
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
         password,
         options: {
           data: {
@@ -66,14 +74,25 @@ export default function SignUpPage() {
         }
       })
 
+      console.log('Sign up response:', { error, user: data?.user?.email, needsConfirmation: !data?.session })
+
       if (error) {
+        console.error('Sign up error:', error)
         setError(error.message)
         toast.error(error.message)
-      } else {
-        toast.success('Account created successfully! Please check your email for verification.')
-        router.push('/sign-in')
+      } else if (data?.user) {
+        if (data.session) {
+          // User was automatically signed in (email confirmation disabled)
+          toast.success('Account created and signed in successfully!')
+          window.location.href = '/dashboard'
+        } else {
+          // User needs to confirm email
+          toast.success('Account created successfully! Please check your email for verification.')
+          router.push('/sign-in')
+        }
       }
-    } catch {
+    } catch (err) {
+      console.error('Unexpected sign up error:', err)
       setError('An unexpected error occurred')
       toast.error('An unexpected error occurred')
     } finally {
