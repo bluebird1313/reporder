@@ -23,11 +23,9 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {children}
-        <Toaster richColors position="top-right" />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </AuthProvider>
+      {children}
+      <Toaster richColors position="top-right" />
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   )
 } 
