@@ -407,17 +407,63 @@ export default function SalesDashboard() {
   const [analytics, setAnalytics] = React.useState<SalesAnalytics | null>(null)
   const [recentOrders, setRecentOrders] = React.useState<CustomerOrder[]>([])
   const [loading, setLoading] = React.useState(true)
+  const [user, setUser] = React.useState<any>(null)
+  const [authLoading, setAuthLoading] = React.useState(true)
   
   // URL state management for brand filtering
   const [selectedBrands, setSelectedBrands] = React.useState<string[]>([])
   const [availableBrands, setAvailableBrands] = React.useState<string[]>([])
   const [favoriteBrands, setFavoriteBrands] = React.useState<string[]>([])
 
-  // Mock rep ID - in a real app this would come from auth context
-  const repId = "mock-rep-id"
+  // Check authentication status
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user }, error } = await supabase.auth.getUser()
+        
+        if (error) {
+          console.error('Auth error:', error)
+          router.push('/sign-in')
+          return
+        }
+        
+        if (!user) {
+          router.push('/sign-in')
+          return
+        }
+        
+        setUser(user)
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        router.push('/sign-in')
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+    
+    checkAuth()
+  }, [router])
 
-  // React Query hooks for new dashboard features
-  const { data: goalProgress, isLoading: goalsLoading } = useGoalProgress(repId, 'month')
+  // Show loading screen while checking authentication
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    return null
+  }
+
+  // React Query hooks for dashboard features (only run when authenticated)
+  const { data: goalProgress, isLoading: goalsLoading } = useGoalProgress(user.id, 'month')
   const { data: stockAlerts, isLoading: alertsLoading, refetch: refetchAlerts } = useStockAlerts()
   const { data: forecastData, isLoading: forecastLoading } = useForecast(
     undefined, 

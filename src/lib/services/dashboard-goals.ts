@@ -351,7 +351,7 @@ export function useGoalProgress(repId: string, period: 'day' | 'week' | 'month' 
   return useQuery({
     queryKey: ['goalProgress', repId, period],
     queryFn: () => fetchGoalProgress(repId, period),
-    enabled: !!repId,
+    enabled: !!repId && repId !== 'placeholder-id',
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }

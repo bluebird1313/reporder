@@ -29,21 +29,56 @@ export function SignInForm() {
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+      
+      // Validate email format before making request
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        setError('Please enter a valid email address')
+        toast.error('Please enter a valid email address')
+        return
+      }
+
+      if (formData.password.length < 6) {
+        setError('Password must be at least 6 characters long')
+        toast.error('Password must be at least 6 characters long')
+        return
+      }
+      
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
       })
 
       if (error) {
-        setError(error.message)
-        toast.error(error.message)
-      } else {
-        toast.success('Signed in successfully!')
-        router.push('/dashboard')
+        console.error('Auth error:', error)
+        // Provide more specific error messages
+        let errorMessage = error.message
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.'
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in.'
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please wait a few minutes and try again.'
+        }
+        
+        setError(errorMessage)
+        toast.error(errorMessage)
+      } else if (data.user) {
+        // Verify the user session was created properly
+        const { data: session } = await supabase.auth.getSession()
+        if (session?.session) {
+          toast.success('Signed in successfully!')
+          // Use window.location for a clean redirect that ensures middleware runs
+          window.location.href = '/dashboard'
+        } else {
+          setError('Authentication failed. Please try again.')
+          toast.error('Authentication failed. Please try again.')
+        }
       }
-    } catch {
-      setError('An unexpected error occurred')
-      toast.error('An unexpected error occurred')
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      setError('Connection error. Please check your internet connection and try again.')
+      toast.error('Connection error. Please check your internet connection and try again.')
     } finally {
       setIsLoading(false)
     }

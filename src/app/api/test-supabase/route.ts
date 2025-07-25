@@ -11,6 +11,13 @@ export async function GET() {
     
     const supabase = await createClient()
     
+    // Test auth service
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    console.log('Auth test:', { 
+      hasUser: !!authData?.user, 
+      authError: authError?.message 
+    })
+    
     // Test basic connection
     const { data: stores, error: storesError } = await supabase
       .from('stores')
